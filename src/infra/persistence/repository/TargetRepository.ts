@@ -1,0 +1,27 @@
+import { TargetStatus } from '../../../domain/models/Target';
+import { prisma } from '../prismaClient';
+
+export interface CreateTargetInput {
+  name: string;
+  linkedinUrl: string;
+  role?: string | null;
+  company?: string | null;
+}
+
+export class TargetRepository {
+  async createMany(targets: CreateTargetInput[]) {
+    await prisma.target.createMany({ data: targets, skipDuplicates: true });
+  }
+
+  async list() {
+    return prisma.target.findMany({ orderBy: { createdAt: 'desc' } });
+  }
+
+  async findById(id: number) {
+    return prisma.target.findUnique({ where: { id }, include: { profile: true, messages: true } });
+  }
+
+  async updateStatus(id: number, status: TargetStatus) {
+    return prisma.target.update({ where: { id }, data: { status } });
+  }
+}
