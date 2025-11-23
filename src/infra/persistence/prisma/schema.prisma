@@ -1,0 +1,49 @@
+// Prisma schema for LinkedIn Outreach Engine
+// SQLite for local/demo use; can be swapped later
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Target {
+  id             Int              @id @default(autoincrement())
+  name           String
+  linkedinUrl    String           @unique
+  role           String?
+  company        String?
+  status         String           @default("NOT_VISITED")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  profile        ProfileSnapshot?
+  messages       Message[]
+}
+
+model ProfileSnapshot {
+  id          Int      @id @default(autoincrement())
+  targetId    Int      @unique
+  headline    String?
+  about       String?
+  currentRole String?
+  company     String?
+  location    String?
+  industry    String?
+  rawHtml     String?
+  createdAt   DateTime @default(now())
+  target      Target   @relation(fields: [targetId], references: [id])
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  targetId  Int
+  variant   String
+  content   String
+  status    String   @default("DRAFT")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  target    Target   @relation(fields: [targetId], references: [id])
+}

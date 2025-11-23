@@ -1,0 +1,44 @@
+{
+  "name": "prema-linkedin-outreach",
+  "version": "1.0.0",
+  "description": "Part of Prema Vision AI Automations portfolio — prema-linkedin-outreach project.",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "src/ui"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm:dev:server\" \"npm --workspace ui run dev\"",
+    "dev:server": "tsx src/infra/http/server.ts",
+    "lint": "echo \"No root lint configured\"",
+    "test": "vitest",
+    "seed:targets": "tsx scripts/seedTargets.ts",
+    "prisma:generate": "prisma generate --schema src/infra/persistence/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --schema src/infra/persistence/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "cors": "^2.8.5",
+    "csv-parse": "^6.1.0",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "openai": "^6.9.1",
+    "playwright": "^1.56.1",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/csv-parse": "^1.1.12",
+    "@types/express": "^5.0.5",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.10.1",
+    "concurrently": "^9.2.1",
+    "prisma": "^5.22.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.10"
+  }
+}
