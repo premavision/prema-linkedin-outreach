@@ -2,7 +2,7 @@ import { LLMClient } from '../../infra/llm/LLMClient';
 import { MessageRepository } from '../../infra/persistence/repository/MessageRepository';
 import { TargetRepository } from '../../infra/persistence/repository/TargetRepository';
 
-export class MessageService {
+class MessageService {
   constructor(private llmClient: LLMClient, private messageRepo: MessageRepository, private targetRepo: TargetRepository) {}
 
   async generate(targetId: number, offerContext: string, count = 2) {
@@ -34,3 +34,5 @@ export class MessageService {
     return this.messageRepo.listApproved();
   }
 }
+
+export { MessageService };
