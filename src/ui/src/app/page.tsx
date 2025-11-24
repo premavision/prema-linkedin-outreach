@@ -1,6 +1,12 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import { Upload, User, Building, FileText, Linkedin, Wand2, Search, Loader2 } from 'lucide-react';
+import { Button } from '../components/Button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/Card';
+import { Input } from '../components/Input';
+import { Textarea } from '../components/Textarea';
+import Link from 'next/link';
 
 const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
 
@@ -18,6 +24,7 @@ export default function DashboardPage() {
   const [offerContext, setOfferContext] = useState('We help teams build safe AI automations that keep humans in control.');
   const [importFile, setImportFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingId, setLoadingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const loadTargets = async () => {
@@ -42,111 +49,228 @@ export default function DashboardPage() {
     }
     await loadTargets();
     setLoading(false);
+    setImportFile(null);
   };
 
   const triggerScrape = async (id: number) => {
-    setLoading(true);
+    setLoadingId(id);
     await fetch(`${apiBase}/targets/${id}/scrape`, { method: 'POST' });
     await loadTargets();
-    setLoading(false);
+    setLoadingId(null);
   };
 
   const triggerGenerate = async (id: number) => {
-    setLoading(true);
+    setLoadingId(id);
     await fetch(`${apiBase}/targets/${id}/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ offerContext }),
     });
     await loadTargets();
-    setLoading(false);
+    setLoadingId(null);
   };
 
+  const getStatusBadge = (rawStatus: string) => {
+    const status = rawStatus?.toUpperCase() ?? '';
+
+    const styles: Record<string, string> = {
+      NEW: 'bg-slate-100 text-slate-700 border-slate-200',
+      NOT_VISITED: 'bg-orange-50 text-orange-700 border-orange-200',
+      SCRAPED: 'bg-blue-50 text-blue-700 border-blue-200',
+      MESSAGE_DRAFTED: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      DRAFTS_GENERATED: 'bg-purple-50 text-purple-700 border-purple-200',
+      MESSAGES_APPROVED: 'bg-green-50 text-green-700 border-green-200',
+      default: 'bg-gray-100 text-gray-700 border-gray-200',
+    };
+
+    const labels: Record<string, string> = {
+      NEW: 'New',
+      NOT_VISITED: 'Not Visited',
+      SCRAPED: 'Scraped',
+      MESSAGE_DRAFTED: 'Message Drafted',
+      DRAFTS_GENERATED: 'Drafts Ready',
+      MESSAGES_APPROVED: 'Approved',
+    };
+
+    const style = styles[status] ?? styles.default;
+    const label = labels[status] ?? rawStatus ?? 'Unknown';
+
+    return (
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${style}`}>
+        {label}
+      </span>
+    );
+  };
+
+  // Render dashboard content
   return (
-    <main className="p-8 space-y-6">
-      <header className="space-y-2">
-        <h1 className="text-3xl font-semibold">LinkedIn Outreach Engine</h1>
-        <p className="text-gray-600">
-          Draft personalized outreach while keeping a human firmly in control. No auto-sending; review every message.
-        </p>
+    <div className="max-w-6xl mx-auto space-y-12 pb-20 px-4 sm:px-0">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b pb-10">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Campaign Dashboard</h1>
+          <p className="text-slate-500 mt-3 text-lg">
+            Manage targets and generate personalized outreach.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+           <Link href="/export">
+            <Button variant="outline">
+              Export Approved
+            </Button>
+          </Link>
+        </div>
       </header>
 
-      <section className="p-4 border rounded space-y-4">
-        <h2 className="text-xl font-semibold">Import targets</h2>
-        <form onSubmit={handleImport} className="flex gap-4 items-center">
-          <input type="file" accept=".csv" onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} />
-          <button className="px-3 py-2 bg-blue-600 text-white rounded" disabled={loading} type="submit">
-            Upload CSV
-          </button>
-          {error && <span className="text-red-600">{error}</span>}
-        </form>
-        <p className="text-sm text-gray-500">CSV columns: name, linkedinUrl, role, company</p>
-      </section>
+      <div className="grid gap-10 lg:grid-cols-3">
+        <Card className="lg:col-span-1 h-fit">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-lg">
+              <Upload className="h-5 w-5 text-slate-500" />
+              Import Targets
+            </CardTitle>
+            <CardDescription className="mt-2">Upload a CSV with target details.</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <form onSubmit={handleImport} className="space-y-6">
+              <div className="grid w-full max-w-sm items-center gap-2">
+                <Input 
+                  type="file" 
+                  accept=".csv" 
+                  className="cursor-pointer file:bg-slate-50 file:text-slate-700 file:border-0 file:mr-4 file:py-2.5 file:px-5 file:rounded-full hover:file:bg-slate-100 transition-all h-12"
+                  onChange={(e) => setImportFile(e.target.files?.[0] ?? null)} 
+                />
+              </div>
+              <Button className="w-full h-11" type="submit" disabled={loading || !importFile} loading={loading}>
+                {loading ? 'Uploading...' : 'Upload CSV'}
+              </Button>
+              {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-100">{error}</p>}
+              <p className="text-xs text-slate-400 pt-1">
+                Columns: name, linkedinUrl, role, company
+              </p>
+            </form>
+          </CardContent>
+        </Card>
 
-      <section className="p-4 border rounded space-y-3">
-        <label className="text-sm font-medium">Offer context</label>
-        <textarea
-          className="w-full border rounded p-2"
-          rows={3}
-          value={offerContext}
-          onChange={(e) => setOfferContext(e.target.value)}
-        />
-      </section>
+        <Card className="lg:col-span-2">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3 text-lg">
+              <FileText className="h-5 w-5 text-slate-500" />
+              Offer Context
+            </CardTitle>
+            <CardDescription className="mt-2">Define the value proposition for your outreach.</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-2">
+            <div className="space-y-4">
+              <Textarea
+                rows={5}
+                className="resize-none focus:ring-blue-500/20 min-h-[140px] text-base"
+                value={offerContext}
+                onChange={(e) => setOfferContext(e.target.value)}
+                placeholder="Describe your offer..."
+              />
+              <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                <Wand2 className="h-3.5 w-3.5" />
+                Used by AI to personalize message drafts.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      <section className="p-4 border rounded space-y-2">
-        <div className="flex justify-between items-center">
-          <h2 className="text-xl font-semibold">Targets</h2>
-          <a className="text-blue-600 underline" href="/export">
-            Export approved messages
-          </a>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
+            <User className="h-6 w-6 text-slate-500" />
+            Target List
+            <span className="text-sm font-normal text-slate-500 ml-2 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">{targets.length}</span>
+          </h2>
         </div>
-        <div className="overflow-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="text-left border-b">
-                <th className="p-2">Name</th>
-                <th className="p-2">Role</th>
-                <th className="p-2">Company</th>
-                <th className="p-2">Status</th>
-                <th className="p-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {targets.map((t) => (
-                <tr key={t.id} className="border-b hover:bg-gray-50">
-                  <td className="p-2">
-                    <a className="text-blue-600 underline" href={`/targets/${t.id}`}>
-                      {t.name}
-                    </a>
-                  </td>
-                  <td className="p-2">{t.role}</td>
-                  <td className="p-2">{t.company}</td>
-                  <td className="p-2">{t.status}</td>
-                  <td className="p-2 space-x-2">
-                    <button
-                      className="px-3 py-1 bg-gray-800 text-white rounded"
-                      onClick={() => triggerScrape(t.id)}
-                      disabled={loading}
-                    >
-                      Scrape profile
-                    </button>
-                    <button
-                      className="px-3 py-1 bg-green-700 text-white rounded"
-                      onClick={() => triggerGenerate(t.id)}
-                      disabled={loading}
-                    >
-                      Generate drafts
-                    </button>
-                    <a className="px-3 py-1 bg-white border rounded" href={t.linkedinUrl} target="_blank">
-                      Open LinkedIn
-                    </a>
-                  </td>
+
+        <Card className="border-0 bg-transparent shadow-none">
+          <CardContent className="p-0">
+            <div className="rounded-2xl border border-slate-100 bg-white shadow-2xl ring-1 ring-slate-100 overflow-hidden">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-slate-50/70 text-slate-500 border-b border-slate-100">
+                <tr>
+                  <th className="px-6 py-5 font-medium w-[25%] text-xs uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-5 font-medium w-[25%] text-xs uppercase tracking-wider">Role & Company</th>
+                  <th className="px-6 py-5 font-medium w-[20%] text-xs uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-5 font-medium text-right w-[30%] text-xs uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </main>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                {targets.map((t) => (
+                  <tr key={t.id} className="group odd:bg-white even:bg-slate-50/40 hover:bg-slate-100/60 transition-colors">
+                    <td className="px-6 py-5">
+                      <Link href={`/targets/${t.id}`} className="font-semibold text-base text-slate-900 hover:text-blue-600 hover:underline decoration-blue-200 underline-offset-4 transition-all">
+                        {t.name}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="space-y-1.5">
+                        <div className="font-medium text-slate-700 text-sm">{t.role || '—'}</div>
+                        <div className="flex items-center gap-1.5 text-slate-500 text-xs">
+                          <Building className="h-3.5 w-3.5" />
+                          {t.company || '—'}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      {getStatusBadge(t.status)}
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="flex justify-end items-center gap-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-9 w-9 p-0 text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                          onClick={() => triggerScrape(t.id)}
+                          disabled={loadingId === t.id}
+                          title="Scrape Profile"
+                        >
+                          {loadingId === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-9 w-9 p-0 text-slate-500 hover:text-purple-600 hover:bg-purple-50"
+                          onClick={() => triggerGenerate(t.id)}
+                          disabled={loadingId === t.id}
+                          title="Generate Messages"
+                        >
+                          {loadingId === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                        </Button>
+                        <div className="w-px h-5 bg-slate-200 mx-1" />
+                        <a href={t.linkedinUrl} target="_blank" rel="noopener noreferrer" title="Open LinkedIn">
+                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 hover:text-[#0077b5] hover:bg-[#0077b5]/10">
+                            <Linkedin className="h-4 w-4" />
+                          </Button>
+                        </a>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {targets.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="p-16 text-center bg-white">
+                      <div className="flex flex-col items-center gap-4 text-slate-500">
+                        <div className="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center">
+                          <User className="h-7 w-7 text-slate-400" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="font-medium text-lg text-slate-900">No targets yet</p>
+                          <p className="text-slate-500">Upload a CSV file to get started.</p>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }
