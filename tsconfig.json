@@ -2,9 +2,11 @@
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
-    "module": "commonjs",
+    "module": "Node16",
     "target": "es2021",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "sourceMap": true,
     "declaration": true,
     "declarationMap": true,
@@ -21,6 +23,12 @@
     "resolveJsonModule": true,
     "moduleResolution": "node16"
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx"],
-  "exclude": ["node_modules", "src/ui/.next"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "src/ui/.next"
+  ]
 }

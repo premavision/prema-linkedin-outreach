@@ -1,0 +1,19 @@
+{
+    "name": "Alex Rivera",
+    "headline": "CTO at FinTech Forward | Building the future of payments",
+    "about": "Passionate technology leader with 15+ years of experience in fintech and banking. Currently leading the engineering team at FinTech Forward, where we are revolutionizing cross-border payments. Expert in cloud architecture, security, and building high-performing teams.",
+    "currentRole": "Chief Technology Officer",
+    "company": "FinTech Forward",
+    "location": "New York, NY",
+    "industry": "Financial Services",
+    "skills": [
+        "Cloud Architecture",
+        "Cybersecurity",
+        "Team Leadership",
+        "Fintech"
+    ],
+    "recentActivity": [
+        "Shared an article about the future of blockchain in banking.",
+        "Congratulated the team on the Series B funding round."
+    ]
+}

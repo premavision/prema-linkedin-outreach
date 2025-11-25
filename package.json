@@ -2,7 +2,7 @@
   "name": "prema-linkedin-outreach",
   "version": "1.0.0",
   "description": "Part of Prema Vision AI Automations portfolio — prema-linkedin-outreach project.",
-  "type": "commonjs",
+  "type": "module",
   "engines": {
     "node": ">=20"
   },
