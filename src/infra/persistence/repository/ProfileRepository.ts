@@ -1,5 +1,5 @@
-import { ProfileSnapshot } from '../../../domain/models/ProfileSnapshot';
-import { prisma } from '../prismaClient';
+import type { ProfileSnapshot } from '../../../domain/models/ProfileSnapshot.js';
+import { prisma } from '../prismaClient.js';
 
 export interface UpsertProfileInput {
   targetId: number;
@@ -13,6 +13,12 @@ export interface UpsertProfileInput {
 }
 
 export class ProfileRepository {
+  async findByTargetId(targetId: number): Promise<ProfileSnapshot | null> {
+    return prisma.profileSnapshot.findUnique({
+      where: { targetId },
+    });
+  }
+
   async upsertProfile(data: UpsertProfileInput): Promise<ProfileSnapshot> {
     return prisma.profileSnapshot.upsert({
       where: { targetId: data.targetId },
