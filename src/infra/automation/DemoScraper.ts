@@ -1,4 +1,4 @@
-import { Scraper, ProfileScrapeResult } from './Scraper';
+import type { ProfileScrapeResult, Scraper } from './Scraper.js';
 
 const demoProfiles: ProfileScrapeResult[] = [
   {

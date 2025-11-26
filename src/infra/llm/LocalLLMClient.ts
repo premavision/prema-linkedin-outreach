@@ -1,5 +1,5 @@
-import { LLMClient, MessageDraft } from './LLMClient';
-import { outreachPrompt } from './promptTemplates';
+import type { LLMClient, MessageDraft } from './LLMClient.js';
+import { outreachPrompt } from './promptTemplates.js';
 
 export class LocalLLMClient implements LLMClient {
   async generateOutreachDrafts(input: {

@@ -1,6 +1,6 @@
-import { Scraper } from '../../infra/automation/Scraper';
-import { ProfileRepository } from '../../infra/persistence/repository/ProfileRepository';
-import { TargetRepository } from '../../infra/persistence/repository/TargetRepository';
+import type { Scraper } from '../../infra/automation/Scraper.js';
+import { ProfileRepository } from '../../infra/persistence/repository/ProfileRepository.js';
+import { TargetRepository } from '../../infra/persistence/repository/TargetRepository.js';
 
 export class ScrapeService {
   constructor(private scraper: Scraper, private profileRepo: ProfileRepository, private targetRepo: TargetRepository) {}

@@ -1,5 +1,5 @@
-import { MessageStatus } from '../../../domain/models/Message';
-import { prisma } from '../prismaClient';
+import type { MessageStatus } from '../../../domain/models/Message.js';
+import { prisma } from '../prismaClient.js';
 
 export interface CreateMessageInput {
   targetId: number;

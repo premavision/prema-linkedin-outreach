@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
-import { LLMClient, MessageDraft } from './LLMClient';
-import { outreachPrompt } from './promptTemplates';
+import type { LLMClient, MessageDraft } from './LLMClient.js';
+import { outreachPrompt } from './promptTemplates.js';
 
 export class OpenAILLMClient implements LLMClient {
   private client: OpenAI;

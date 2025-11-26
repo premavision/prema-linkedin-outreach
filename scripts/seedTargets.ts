@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { prisma } from '../src/infra/persistence/prismaClient';
+import { prisma } from '../src/infra/persistence/prismaClient.js';
 
 const SAMPLE_TARGETS = [
   {
