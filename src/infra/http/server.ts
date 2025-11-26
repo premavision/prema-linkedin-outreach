@@ -1,18 +1,18 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import { config } from '../../config/env';
-import { TargetRepository } from '../persistence/repository/TargetRepository';
-import { ProfileRepository } from '../persistence/repository/ProfileRepository';
-import { MessageRepository } from '../persistence/repository/MessageRepository';
-import { TargetService } from '../../domain/services/TargetService';
-import { ScrapeService } from '../../domain/services/ScrapeService';
-import { MessageService } from '../../domain/services/MessageService';
-import { DemoScraper } from '../automation/DemoScraper';
-import { PlaywrightScraper } from '../automation/PlaywrightScraper';
-import { LocalLLMClient } from '../llm/LocalLLMClient';
-import { OpenAILLMClient } from '../llm/OpenAILLMClient';
-import { Scraper } from '../automation/Scraper';
+import { config } from '../../config/env.js';
+import { TargetRepository } from '../persistence/repository/TargetRepository.js';
+import { ProfileRepository } from '../persistence/repository/ProfileRepository.js';
+import { MessageRepository } from '../persistence/repository/MessageRepository.js';
+import { TargetService } from '../../domain/services/TargetService.js';
+import { ScrapeService } from '../../domain/services/ScrapeService.js';
+import { MessageService } from '../../domain/services/MessageService.js';
+import { DemoScraper } from '../automation/DemoScraper.js';
+import { PlaywrightScraper } from '../automation/PlaywrightScraper.js';
+import { LocalLLMClient } from '../llm/LocalLLMClient.js';
+import { OpenAILLMClient } from '../llm/OpenAILLMClient.js';
+import { Scraper } from '../automation/Scraper.js';
 
 const upload = multer();
 
@@ -122,6 +122,6 @@ export function startServer() {
   return app;
 }
 
-if (require.main === module) {
+if (import.meta.main) {
   startServer();
 }

@@ -1,6 +1,6 @@
-import { LLMClient } from '../../infra/llm/LLMClient';
-import { MessageRepository } from '../../infra/persistence/repository/MessageRepository';
-import { TargetRepository } from '../../infra/persistence/repository/TargetRepository';
+import type { LLMClient } from '../../infra/llm/LLMClient.js';
+import { MessageRepository } from '../../infra/persistence/repository/MessageRepository.js';
+import { TargetRepository } from '../../infra/persistence/repository/TargetRepository.js';
 
 class MessageService {
   constructor(private llmClient: LLMClient, private messageRepo: MessageRepository, private targetRepo: TargetRepository) {}

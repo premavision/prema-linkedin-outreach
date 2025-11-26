@@ -1,11 +1,11 @@
-import { TargetStatus } from '../../../domain/models/Target';
-import { prisma } from '../prismaClient';
+import type { TargetStatus } from '../../../domain/models/Target.js';
+import { prisma } from '../prismaClient.js';
 
 export interface CreateTargetInput {
   name: string;
   linkedinUrl: string;
-  role?: string | null;
-  company?: string | null;
+  role?: string | null | undefined;
+  company?: string | null | undefined;
 }
 
 export class TargetRepository {

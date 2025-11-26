@@ -1,7 +1,8 @@
 import { parse } from 'csv-parse/sync';
 import { z } from 'zod';
-import { TargetStatus } from '../models/Target';
-import { CreateTargetInput, TargetRepository } from '../../infra/persistence/repository/TargetRepository';
+import type { TargetStatus } from '../models/Target.js';
+import type { CreateTargetInput } from '../../infra/persistence/repository/TargetRepository.js';
+import { TargetRepository } from '../../infra/persistence/repository/TargetRepository.js';
 
 const targetCsvSchema = z.object({
   name: z.string(),
