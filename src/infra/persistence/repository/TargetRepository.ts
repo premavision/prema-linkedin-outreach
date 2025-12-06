@@ -14,22 +14,37 @@ export class TargetRepository {
     // Use individual creates with error handling to skip duplicates
     const results = await Promise.allSettled(
       targets.map((target) =>
-        prisma.target.create({ data: target })
+        prisma.target.create({ 
+          data: {
+            name: target.name,
+            linkedinUrl: target.linkedinUrl,
+            role: target.role ?? null,
+            company: target.company ?? null,
+          }
+        })
       )
     );
     
     // Log any errors but don't fail - duplicates are expected
     const errors = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
     if (errors.length > 0) {
-      const duplicateErrors = errors.filter((e) => 
-        e.reason?.code === 'P2002' || e.reason?.message?.includes('UNIQUE constraint')
-      );
+      const duplicateErrors = errors.filter((e) => {
+        const reason = e.reason as { code?: string; message?: string } | undefined;
+        return reason?.code === 'P2002' || reason?.message?.includes('UNIQUE constraint');
+      });
       if (duplicateErrors.length < errors.length) {
         // Some non-duplicate errors occurred
-        const otherErrors = errors.filter((e) => 
-          e.reason?.code !== 'P2002' && !e.reason?.message?.includes('UNIQUE constraint')
-        );
-        throw new Error(`Failed to create some targets: ${otherErrors.map((e) => e.reason?.message).join(', ')}`);
+        const otherErrors = errors.filter((e) => {
+          const reason = e.reason as { code?: string; message?: string } | undefined;
+          return reason?.code !== 'P2002' && !reason?.message?.includes('UNIQUE constraint');
+        });
+        const errorMessages = otherErrors
+          .map((e) => {
+            const reason = e.reason as { message?: string } | undefined;
+            return reason?.message || 'Unknown error';
+          })
+          .join(', ');
+        throw new Error(`Failed to create some targets: ${errorMessages}`);
       }
       // All errors were duplicates, which is fine
     }

@@ -1,14 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { resolve } from 'node:path';
 
-const API_BASE = 'http://127.0.0.1:4000';
 const CSV_FIXTURE = resolve('tests/e2e/fixtures/targets.csv');
 
 const targetRow = (page: Page, name: string) => page.locator('tbody tr', { hasText: name });
 
 test.describe.configure({ mode: 'serial' });
 
-test('Dashboard import-to-export journey stays consistent', async ({ page, request }) => {
+test('Dashboard import-to-export journey stays consistent', async ({ page }) => {
   await test.step('Import a fresh CSV and confirm the dashboard reflects the new targets', async () => {
     await page.goto('/');
     await expect(
@@ -35,10 +34,7 @@ test('Dashboard import-to-export journey stays consistent', async ({ page, reque
       // Click and wait for loading to finish
       await uploadButton.click();
       
-      // Wait for button to stop loading (upload complete)
-      // await expect(uploadButton).not.toBeDisabled({ timeout: 60_000 });
-      
-      // Wait a moment for UI to update
+      // Wait a moment for UI to update after upload
       await page.waitForTimeout(1000);
       
       // Check for error message first
@@ -77,33 +73,6 @@ test('Dashboard import-to-export journey stays consistent', async ({ page, reque
     expect(found).toBe(true);
   });
 
-  // await test.skip('Approve a generated message and ensure the export endpoint returns it', async () => {
-  //   const targets = await request.get(`${API_BASE}/targets`).then((res) => res.json());
-  //   const selected = targets.find((item: { name: string }) => item.name === 'Avery Chen');
-  //   expect(selected).toBeTruthy();
-
-  //   const messages = await request.get(`${API_BASE}/targets/${selected.id}/messages`).then((res) => res.json());
-  //   expect(messages.length).toBeGreaterThan(0);
-
-  //   const [primaryMessage] = messages;
-  //   await request.patch(`${API_BASE}/messages/${primaryMessage.id}`, {
-  //     headers: { 'Content-Type': 'application/json' },
-  //     data: JSON.stringify({ status: 'APPROVED' }),
-  //   });
-
-  //   await page.goto('/export');
-  //   const downloadLink = page.getByRole('link', { name: /Download CSV/i });
-
-  //   const [csvResponse] = await Promise.all([
-  //     page.waitForResponse((response) => response.url().includes('/export/approved') && response.status() === 200),
-  //     downloadLink.click(),
-  //   ]);
-
-  //   const csvBody = await csvResponse.body().then(buf => buf.toString());
-  //   await expect(csvBody).toContain('name,linkedinUrl,message');
-  //   await expect(csvBody).toContain('Avery Chen');
-  //   await expect(csvBody).toContain('Hi Avery Chen');
-  // });
 });
 
 test('Target detail page demo generator paints profile + draft cards', async ({ page }) => {

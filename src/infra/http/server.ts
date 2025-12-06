@@ -97,7 +97,10 @@ app.patch('/messages/:id', async (req, res) => {
   const id = Number(req.params.id);
   const { content, status } = req.body as { content?: string; status?: 'DRAFT' | 'APPROVED' | 'DISCARDED' };
   try {
-    const updated = await messageService.updateMessage(id, { content, status });
+    const updateData: { content?: string; status?: 'DRAFT' | 'APPROVED' | 'DISCARDED' } = {};
+    if (content !== undefined) updateData.content = content;
+    if (status !== undefined) updateData.status = status;
+    const updated = await messageService.updateMessage(id, updateData);
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
@@ -185,20 +188,16 @@ process.on('uncaughtException', (error) => {
 });
 
 // Start server - this file is only executed directly via tsx
-if (import.meta.url === `file://${process.argv[1]}` || import.meta.main) {
-  startServer()
-    .then(() => {
-      // Server is running
-    })
-    .catch((error) => {
-      console.error('Failed to start server:', error);
-      if (error instanceof Error) {
-        console.error('Error name:', error.name);
-        console.error('Error message:', error.message);
-        if (error.stack) {
-          console.error('Error stack:', error.stack);
-        }
+if (import.meta.main) {
+  startServer().catch((error) => {
+    console.error('Failed to start server:', error);
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      if (error.stack) {
+        console.error('Error stack:', error.stack);
       }
-      process.exit(1);
-    });
+    }
+    process.exit(1);
+  });
 }
