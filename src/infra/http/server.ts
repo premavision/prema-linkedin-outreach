@@ -187,17 +187,16 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-// Start server - this file is only executed directly via tsx
-if (import.meta.main) {
-  startServer().catch((error) => {
-    console.error('Failed to start server:', error);
-    if (error instanceof Error) {
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      if (error.stack) {
-        console.error('Error stack:', error.stack);
-      }
+// Start server when this file is executed directly via tsx
+// This file is the entry point, so we always start the server when executed
+startServer().catch((error) => {
+  console.error('Failed to start server:', error);
+  if (error instanceof Error) {
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    if (error.stack) {
+      console.error('Error stack:', error.stack);
     }
-    process.exit(1);
-  });
-}
+  }
+  process.exit(1);
+});
