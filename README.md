@@ -104,6 +104,9 @@ npm run prisma:migrate
 ```bash
 npm run dev
 ```
+- Express API on `http://localhost:4000`
+- Next.js UI on `http://localhost:3000`
+- **Note:** The dev script automatically generates Prisma client. Make sure you've run `npm run prisma:migrate` first.
 
 ### Backend only
 ```bash
@@ -117,6 +120,24 @@ npm --workspace ui run dev
 
 - API: `http://localhost:4000`  
 - UI: `http://localhost:3000`
+
+### Troubleshooting
+
+**"Unable to connect to API server" error:**
+1. Make sure the API server is running on port 4000:
+   ```bash
+   npm run dev:server
+   ```
+2. Check if port 4000 is already in use:
+   ```bash
+   lsof -i :4000
+   ```
+3. Ensure the database is set up:
+   ```bash
+   npm run prisma:generate
+   npm run prisma:migrate
+   ```
+4. Verify the API server started successfully - you should see: `API server running on port 4000`
 
 ---
 
@@ -203,3 +224,11 @@ If you'd like, I can generate:
 - an **architecture PDF**
 
 Just say the word.
+
+---
+
+## 🧪 End-to-end Tests
+
+- `tests/e2e/dashboard.spec.ts` drives Playwright against the combo dev stack (`npm run dev`), covering the CSV import ➜ scrape ➜ generate ➜ approve ➜ export flow and the `/targets/[id]` demo generator.
+- Tests share their own SQLite file (`tmp/e2e.db`) and rely on `tests/e2e/fixtures/targets.csv` so the scenarios stay deterministic.
+- Run the suite with `npm run test:e2e`; Playwright will launch the Express and Next dev servers, seed a fresh database, and keep the browser headless.
