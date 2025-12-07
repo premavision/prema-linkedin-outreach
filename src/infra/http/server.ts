@@ -123,7 +123,7 @@ app.use((_req, res) => {
 
 export async function startServer() {
   console.log('Starting server...');
-  console.log(`Database URL: ${config.databaseUrl}`);
+  // Intentionally not logging the full database URL to avoid leaking credentials.
   console.log(`Port: ${config.port}`);
   
   // Test database connection
