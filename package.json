@@ -10,10 +10,12 @@
     "src/ui"
   ],
   "scripts": {
-    "dev": "concurrently \"npm:dev:server\" \"npm --workspace ui run dev\"",
+    "dev": "npm run prisma:generate && concurrently \"npm:dev:server\" \"npm --workspace ui run dev\"",
     "dev:server": "tsx src/infra/http/server.ts",
     "lint": "echo \"No root lint configured\"",
     "test": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "seed:targets": "tsx scripts/seedTargets.ts",
     "prisma:generate": "prisma generate --schema src/infra/persistence/prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema src/infra/persistence/prisma/schema.prisma"
@@ -37,6 +39,7 @@
     "@types/node": "^24.10.1",
     "concurrently": "^9.2.1",
     "prisma": "^5.22.0",
+    "@playwright/test": "^1.56.1",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vitest": "^4.0.10"

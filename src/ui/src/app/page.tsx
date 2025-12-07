@@ -28,8 +28,19 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
 
   const loadTargets = async () => {
-    const res = await fetch(`${apiBase}/targets`, { cache: 'no-store' });
-    setTargets(await res.json());
+    try {
+      const res = await fetch(`${apiBase}/targets`, { cache: 'no-store' });
+      if (!res.ok) {
+        console.error('Failed to load targets:', res.status, res.statusText);
+        setTargets([]);
+        return;
+      }
+      setTargets(await res.json());
+    } catch (error) {
+      console.error('Error loading targets:', error);
+      setTargets([]);
+      setError('Unable to connect to API server. Make sure the backend is running on port 4000.');
+    }
   };
 
   useEffect(() => {
@@ -41,33 +52,55 @@ export default function DashboardPage() {
     if (!importFile) return;
     setLoading(true);
     setError(null);
-    const form = new FormData();
-    form.append('file', importFile);
-    const res = await fetch(`${apiBase}/targets/import`, { method: 'POST', body: form });
-    if (!res.ok) {
-      setError('Import failed');
+    try {
+      const form = new FormData();
+      form.append('file', importFile);
+      const res = await fetch(`${apiBase}/targets/import`, { method: 'POST', body: form });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Import failed' }));
+        setError(errorData.error || 'Import failed');
+      } else {
+        await loadTargets();
+      }
+    } catch (error) {
+      console.error('Error importing targets:', error);
+      setError('Unable to connect to API server. Make sure the backend is running.');
+    } finally {
+      setLoading(false);
+      setImportFile(null);
     }
-    await loadTargets();
-    setLoading(false);
-    setImportFile(null);
   };
 
   const triggerScrape = async (id: number) => {
     setLoadingId(id);
-    await fetch(`${apiBase}/targets/${id}/scrape`, { method: 'POST' });
-    await loadTargets();
-    setLoadingId(null);
+    try {
+      const res = await fetch(`${apiBase}/targets/${id}/scrape`, { method: 'POST' });
+      if (res.ok) {
+        await loadTargets();
+      }
+    } catch (error) {
+      console.error('Error scraping profile:', error);
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   const triggerGenerate = async (id: number) => {
     setLoadingId(id);
-    await fetch(`${apiBase}/targets/${id}/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ offerContext }),
-    });
-    await loadTargets();
-    setLoadingId(null);
+    try {
+      const res = await fetch(`${apiBase}/targets/${id}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ offerContext }),
+      });
+      if (res.ok) {
+        await loadTargets();
+      }
+    } catch (error) {
+      console.error('Error generating messages:', error);
+    } finally {
+      setLoadingId(null);
+    }
   };
 
   const getStatusBadge = (rawStatus: string) => {

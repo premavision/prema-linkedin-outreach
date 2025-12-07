@@ -5,3 +5,6 @@ src/infra/persistence/prisma/dev.db-journal
 /.next
 npm-debug.log*
 dist
+.npm-cache
+tmp
+test-results

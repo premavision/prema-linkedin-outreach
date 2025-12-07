@@ -13,6 +13,7 @@ import { PlaywrightScraper } from '../automation/PlaywrightScraper.js';
 import { LocalLLMClient } from '../llm/LocalLLMClient.js';
 import { OpenAILLMClient } from '../llm/OpenAILLMClient.js';
 import { Scraper } from '../automation/Scraper.js';
+import { prisma } from '../persistence/prismaClient.js';
 
 const upload = multer();
 
@@ -96,7 +97,10 @@ app.patch('/messages/:id', async (req, res) => {
   const id = Number(req.params.id);
   const { content, status } = req.body as { content?: string; status?: 'DRAFT' | 'APPROVED' | 'DISCARDED' };
   try {
-    const updated = await messageService.updateMessage(id, { content, status });
+    const updateData: { content?: string; status?: 'DRAFT' | 'APPROVED' | 'DISCARDED' } = {};
+    if (content !== undefined) updateData.content = content;
+    if (status !== undefined) updateData.status = status;
+    const updated = await messageService.updateMessage(id, updateData);
     res.json(updated);
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
@@ -117,11 +121,82 @@ app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
-export function startServer() {
-  app.listen(config.port, () => console.log(`API server running on port ${config.port}`));
-  return app;
+export async function startServer() {
+  console.log('Starting server...');
+  // Intentionally not logging the full database URL to avoid leaking credentials.
+  console.log(`Port: ${config.port}`);
+  
+  // Test database connection
+  try {
+    console.log('Connecting to database...');
+    await prisma.$connect();
+    console.log('✓ Database connection established');
+  } catch (error) {
+    console.error('✗ Failed to connect to database:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
+    console.error('Make sure you have run: npm run prisma:generate && npm run prisma:migrate');
+    throw error; // Re-throw to be caught by caller
+  }
+
+  return new Promise((resolve, reject) => {
+    let serverStarted = false;
+    
+    const server = app.listen(config.port, () => {
+      if (serverStarted) return; // Prevent duplicate calls
+      serverStarted = true;
+      console.log(`✓ API server running on port ${config.port}`);
+      console.log(`✓ Database: ${config.databaseUrl}`);
+      console.log(`✓ Scraper mode: ${config.scraperMode}`);
+      console.log(`\nServer ready! API available at http://localhost:${config.port}`);
+      resolve(app);
+    });
+    
+    server.on('error', (err: NodeJS.ErrnoException) => {
+      // Only reject if server hasn't started yet
+      if (!serverStarted) {
+        if (err.code === 'EADDRINUSE') {
+          console.error(`\n✗ Port ${config.port} is already in use.`);
+          console.error(`\nTo fix this, run one of the following:`);
+          console.error(`  1. Find and kill the process: lsof -ti :${config.port} | xargs kill`);
+          console.error(`  2. Or change the port: PORT=4001 npm run dev:server`);
+          console.error(`  3. Or use a different port in your .env file: PORT=4001\n`);
+        } else {
+          console.error('✗ Server error:', err);
+        }
+        reject(err);
+      } else {
+        // Server already started, just log the error (shouldn't happen)
+        console.warn('⚠ Server error after startup (server is still running):', err.message);
+      }
+    });
+  });
 }
 
-if (import.meta.main) {
-  startServer();
-}
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+// Start server when this file is executed directly via tsx
+// This file is the entry point, so we always start the server when executed
+startServer().catch((error) => {
+  console.error('Failed to start server:', error);
+  if (error instanceof Error) {
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    if (error.stack) {
+      console.error('Error stack:', error.stack);
+    }
+  }
+  process.exit(1);
+});
