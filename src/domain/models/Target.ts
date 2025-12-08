@@ -1,4 +1,4 @@
-export type TargetStatus = 'NOT_VISITED' | 'PROFILE_SCRAPED' | 'MESSAGE_DRAFTED' | 'APPROVED' | 'EXPORTED';
+export type TargetStatus = 'NOT_VISITED' | 'PROFILE_SCRAPED' | 'MESSAGE_DRAFTED' | 'APPROVED' | 'EXPORTED' | 'BROKEN';
 
 export interface Target {
   id: number;

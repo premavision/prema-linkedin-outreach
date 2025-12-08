@@ -156,6 +156,7 @@ export default function DashboardPage() {
       MESSAGE_DRAFTED: 'bg-purple-50 text-purple-700 border-purple-200',
       APPROVED: 'bg-green-50 text-green-700 border-green-200',
       EXPORTED: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+      BROKEN: 'bg-red-50 text-red-700 border-red-200',
       default: 'bg-gray-100 text-gray-700 border-gray-200',
     };
 
@@ -165,6 +166,7 @@ export default function DashboardPage() {
       MESSAGE_DRAFTED: 'Drafts Ready',
       APPROVED: 'Ready to Export',
       EXPORTED: 'Exported',
+      BROKEN: 'Broken',
     };
 
     const style = styles[status] ?? styles.default;
@@ -284,6 +286,9 @@ export default function DashboardPage() {
               <span className="text-xs font-medium text-orange-700 bg-orange-50 px-2.5 py-0.5 rounded-full border border-orange-200">
                 {targets.filter(t => t.status === 'NOT_VISITED').length} Not Visited
               </span>
+              <span className="text-xs font-medium text-red-700 bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200">
+                {targets.filter(t => t.status === 'BROKEN').length} Broken
+              </span>
               <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
                 {targets.filter(t => t.status === 'PROFILE_SCRAPED').length} Scraped
               </span>
@@ -334,13 +339,14 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-6 py-5 text-right">
                       <div className="flex justify-end items-center gap-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        {t.status === 'NOT_VISITED' ? (
+                        {t.status === 'NOT_VISITED' || t.status === 'BROKEN' ? (
                           <Button
                             variant="outline"
                             size="sm"
                             className="text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200"
                             onClick={() => triggerScrape(t.id)}
                             loading={loadingId === t.id}
+                            disabled={loadingId === t.id || t.status === 'BROKEN'}
                           >
                             Scrape
                           </Button>
@@ -356,11 +362,17 @@ export default function DashboardPage() {
                           </Button>
                         ) : null}
                         <div className="w-px h-5 bg-slate-200 mx-1" />
-                        <a href={t.linkedinUrl} target="_blank" rel="noopener noreferrer" title="Open LinkedIn">
-                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-[#0077b5] hover:bg-[#0077b5]/10">
+                        {t.status === 'BROKEN' ? (
+                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-300" disabled>
                             <Linkedin className="h-4 w-4" />
                           </Button>
-                        </a>
+                        ) : (
+                          <a href={t.linkedinUrl} target="_blank" rel="noopener noreferrer" title="Open LinkedIn">
+                            <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-[#0077b5] hover:bg-[#0077b5]/10">
+                              <Linkedin className="h-4 w-4" />
+                            </Button>
+                          </a>
+                        )}
                       </div>
                     </td>
                   </tr>

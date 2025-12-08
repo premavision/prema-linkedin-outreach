@@ -6,6 +6,7 @@ export interface CreateTargetInput {
   linkedinUrl: string;
   role?: string | null | undefined;
   company?: string | null | undefined;
+  status?: TargetStatus;
 }
 
 export class TargetRepository {
@@ -20,6 +21,7 @@ export class TargetRepository {
             linkedinUrl: target.linkedinUrl,
             role: target.role ?? null,
             company: target.company ?? null,
+            status: target.status ?? 'NOT_VISITED',
           }
         })
       )

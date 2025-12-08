@@ -23,35 +23,36 @@ export class TargetService {
     const errors: string[] = [];
 
     records.forEach((record, index) => {
-      try {
-        const validated = targetCsvSchema.parse({
-            name: record.name ?? record.Name,
-            linkedinUrl: record.linkedinUrl ?? record.LinkedIn ?? record.url,
-            role: record.role ?? record.Role,
-            company: record.company ?? record.Company,
-        });
-        parsed.push(validated);
-      } catch (err) {
-        if (err instanceof z.ZodError) {
-            // Zod 3 uses .issues, .errors is a getter. Zod 4 might only have .issues.
-            // Safely access issues or errors
-            // @ts-ignore - handling potential version differences
-            const issues = err.issues || err.errors;
-            
-            if (issues && Array.isArray(issues)) {
-                // @ts-ignore
-                const rowErrors = issues.map(e => {
-                    const field = e.path ? e.path.join('.') : '';
-                    return field ? `${field}: ${e.message}` : e.message;
-                }).join(', ');
-                errors.push(`Row ${index + 2}: ${rowErrors}`);
-            } else {
-                errors.push(`Row ${index + 2}: Validation failed`);
-            }
-        } else {
-            const msg = (err as Error).message || 'Unknown error';
-            errors.push(`Row ${index + 2}: ${msg}`);
-        }
+      const rawData = {
+          name: record.name ?? record.Name,
+          linkedinUrl: record.linkedinUrl ?? record.LinkedIn ?? record.url,
+          role: record.role ?? record.Role,
+          company: record.company ?? record.Company,
+      };
+
+      const result = targetCsvSchema.safeParse(rawData);
+
+      if (result.success) {
+          parsed.push({ ...result.data, status: 'NOT_VISITED' });
+      } else {
+          // Check if we can save as BROKEN
+          // We need at least name and linkedinUrl to satisfy DB constraints
+          if (rawData.name && rawData.linkedinUrl) {
+              parsed.push({
+                  name: rawData.name,
+                  linkedinUrl: rawData.linkedinUrl,
+                  role: rawData.role || null,
+                  company: rawData.company || null,
+                  status: 'BROKEN'
+              });
+          } else {
+              const issues = result.error.issues;
+              const rowErrors = issues.map(e => {
+                  const field = e.path ? e.path.join('.') : '';
+                  return field ? `${field}: ${e.message}` : e.message;
+              }).join(', ');
+              errors.push(`Row ${index + 2}: ${rowErrors}`);
+          }
       }
     });
 

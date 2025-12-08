@@ -299,6 +299,7 @@ export default function TargetDetailsPage() {
       PROFILE_SCRAPED: 'bg-blue-50 text-blue-700 border-blue-200',
       MESSAGE_DRAFTED: 'bg-purple-50 text-purple-700 border-purple-200',
       APPROVED: 'bg-green-50 text-green-700 border-green-200',
+      BROKEN: 'bg-red-50 text-red-700 border-red-200',
       default: 'bg-gray-100 text-gray-700 border-gray-200',
     };
 
@@ -307,6 +308,7 @@ export default function TargetDetailsPage() {
       PROFILE_SCRAPED: 'Profile Scraped',
       MESSAGE_DRAFTED: 'Drafts Ready',
       APPROVED: 'Approved',
+      BROKEN: 'Broken',
     };
 
     const style = styles[status] ?? styles.default;
@@ -373,11 +375,17 @@ export default function TargetDetailsPage() {
             </div>
           </div>
         </div>
-        <a href={target.linkedinUrl} target="_blank" rel="noopener noreferrer">
-          <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+        {target.status === 'BROKEN' ? (
+          <Button variant="outline" className="text-slate-400 border-slate-200" disabled>
             View on LinkedIn
           </Button>
-        </a>
+        ) : (
+          <a href={target.linkedinUrl} target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+              View on LinkedIn
+            </Button>
+          </a>
+        )}
       </div>
 
       {operationError && (
@@ -431,7 +439,7 @@ export default function TargetDetailsPage() {
                   </div>
                   <Button 
                     onClick={handleScrape} 
-                    disabled={actionLoading === 'scrape'} 
+                    disabled={actionLoading === 'scrape' || target.status === 'BROKEN'} 
                     loading={actionLoading === 'scrape'}
                   >
                     <Search className="h-4 w-4 mr-2" />
