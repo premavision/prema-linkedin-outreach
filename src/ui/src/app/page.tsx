@@ -151,22 +151,18 @@ export default function DashboardPage() {
     const status = rawStatus?.toUpperCase() ?? '';
 
     const styles: Record<string, string> = {
-      NEW: 'bg-slate-100 text-slate-700 border-slate-200',
       NOT_VISITED: 'bg-orange-50 text-orange-700 border-orange-200',
-      SCRAPED: 'bg-blue-50 text-blue-700 border-blue-200',
-      MESSAGE_DRAFTED: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-      DRAFTS_GENERATED: 'bg-purple-50 text-purple-700 border-purple-200',
-      MESSAGES_APPROVED: 'bg-green-50 text-green-700 border-green-200',
+      PROFILE_SCRAPED: 'bg-blue-50 text-blue-700 border-blue-200',
+      MESSAGE_DRAFTED: 'bg-purple-50 text-purple-700 border-purple-200',
+      APPROVED: 'bg-green-50 text-green-700 border-green-200',
       default: 'bg-gray-100 text-gray-700 border-gray-200',
     };
 
     const labels: Record<string, string> = {
-      NEW: 'New',
       NOT_VISITED: 'Not Visited',
-      SCRAPED: 'Scraped',
-      MESSAGE_DRAFTED: 'Message Drafted',
-      DRAFTS_GENERATED: 'Drafts Ready',
-      MESSAGES_APPROVED: 'Approved',
+      PROFILE_SCRAPED: 'Profile Scraped',
+      MESSAGE_DRAFTED: 'Drafts Ready',
+      APPROVED: 'Approved',
     };
 
     const style = styles[status] ?? styles.default;
