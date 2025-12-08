@@ -20,7 +20,38 @@ export class MessageRepository {
     return prisma.message.update({ where: { id }, data });
   }
 
+  async deleteMessage(id: number) {
+    return prisma.message.delete({ where: { id } });
+  }
+
   async listApproved() {
     return prisma.message.findMany({ where: { status: 'APPROVED' }, include: { target: true } });
+  }
+
+  async listNewApproved() {
+    return prisma.message.findMany({
+      where: {
+        status: 'APPROVED',
+        target: {
+          status: {
+            not: 'EXPORTED'
+          }
+        }
+      },
+      include: { target: true }
+    });
+  }
+
+  async countNewApproved() {
+    return prisma.message.count({
+      where: {
+        status: 'APPROVED',
+        target: {
+          status: {
+            not: 'EXPORTED'
+          }
+        }
+      }
+    });
   }
 }

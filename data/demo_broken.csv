@@ -1,0 +1,4 @@
+name,linkedinUrl,role,company
+Broken Row 1,https://linkedin.com/in/broken-1
+Valid Row,https://www.linkedin.com/in/valid-row,Job,Comp
+Broken Row 2,,Missing Data

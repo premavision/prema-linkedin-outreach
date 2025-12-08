@@ -19,6 +19,9 @@ export class OpenAILLMClient implements LLMClient {
   }): Promise<MessageDraft[]> {
     const count = input.count ?? 2;
     const prompt = outreachPrompt({ ...input, count });
+    console.log('--- OpenAI Prompt ---');
+    console.log(prompt);
+    console.log('---------------------');
     const completion = await this.client.chat.completions.create({
       model: this.model,
       messages: [{ role: 'system', content: 'You draft concise LinkedIn outreach messages that sound human and kind.' }, { role: 'user', content: prompt }],
@@ -26,8 +29,8 @@ export class OpenAILLMClient implements LLMClient {
     });
 
     const text = completion.choices[0]?.message?.content ?? '';
-    const variants = text.split(/Variant\s*\d+[:.-]|\n\n/).filter((v) => v.trim().length > 0);
-    const drafts = variants.slice(0, count).map((content, idx) => ({ variant: `V${idx + 1}`, content: content.trim() }));
+    const variants = text.split('---MESSAGE_SEPARATOR---').map((v) => v.trim()).filter((v) => v.length > 0);
+    const drafts = variants.slice(0, count).map((content, idx) => ({ variant: `V${idx + 1}`, content }));
     return drafts.length ? drafts : [{ variant: 'V1', content: text.trim() }];
   }
 }

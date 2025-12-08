@@ -6,6 +6,7 @@ export interface CreateTargetInput {
   linkedinUrl: string;
   role?: string | null | undefined;
   company?: string | null | undefined;
+  status?: TargetStatus;
 }
 
 export class TargetRepository {
@@ -20,6 +21,7 @@ export class TargetRepository {
             linkedinUrl: target.linkedinUrl,
             role: target.role ?? null,
             company: target.company ?? null,
+            status: target.status ?? 'NOT_VISITED',
           }
         })
       )
@@ -50,8 +52,27 @@ export class TargetRepository {
     }
   }
 
-  async list() {
-    return prisma.target.findMany({ orderBy: { createdAt: 'desc' } });
+  async list(skip?: number, take?: number, status?: string) {
+    const where = status && status !== 'ALL' ? { status } : {};
+    
+    const [items, total, statsData] = await Promise.all([
+      prisma.target.findMany({ 
+        where,
+        orderBy: { createdAt: 'desc' },
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
+      }),
+      prisma.target.count({ where }),
+      prisma.target.groupBy({
+        by: ['status'],
+        _count: { status: true }
+      })
+    ]);
+    
+    const stats: Record<string, number> = {};
+    statsData.forEach(g => { stats[g.status] = g._count.status });
+    
+    return { items, total, stats };
   }
 
   async findById(id: number) {

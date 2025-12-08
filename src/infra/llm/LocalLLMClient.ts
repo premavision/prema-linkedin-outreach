@@ -12,6 +12,9 @@ export class LocalLLMClient implements LLMClient {
   }): Promise<MessageDraft[]> {
     const count = input.count ?? 2;
     const base = outreachPrompt({ ...input, count });
+    console.log('--- Local Prompt ---');
+    console.log(base);
+    console.log('--------------------');
     return Array.from({ length: count }).map((_, idx) => ({
       variant: `V${idx + 1}`,
       content: `Hi ${input.name}, I was impressed by your ${input.role ?? 'work'} at ${input.company ?? 'your company'}. ${

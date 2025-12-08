@@ -5,6 +5,7 @@ import { config } from '../../config/env.js';
 import { TargetRepository } from '../persistence/repository/TargetRepository.js';
 import { ProfileRepository } from '../persistence/repository/ProfileRepository.js';
 import { MessageRepository } from '../persistence/repository/MessageRepository.js';
+import { ConfigRepository } from '../persistence/repository/ConfigRepository.js';
 import { TargetService } from '../../domain/services/TargetService.js';
 import { ScrapeService } from '../../domain/services/ScrapeService.js';
 import { MessageService } from '../../domain/services/MessageService.js';
@@ -24,6 +25,7 @@ app.use(express.json());
 const targetRepo = new TargetRepository();
 const profileRepo = new ProfileRepository();
 const messageRepo = new MessageRepository();
+const configRepo = new ConfigRepository();
 
 let scraper: Scraper;
 if (config.scraperMode === 'playwright') {
@@ -52,9 +54,12 @@ app.post('/targets/import', upload.single('file'), async (req, res) => {
   }
 });
 
-app.get('/targets', async (_req, res) => {
-  const targets = await targetService.listTargets();
-  res.json(targets);
+app.get('/targets', async (req, res) => {
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 50;
+  const status = req.query.status as string | undefined;
+  const result = await targetService.listTargets(page, limit, status);
+  res.json(result);
 });
 
 app.get('/targets/:id', async (req, res) => {
@@ -78,9 +83,32 @@ app.post('/targets/:id/scrape', async (req, res) => {
 app.post('/targets/:id/generate', async (req, res) => {
   const id = Number(req.params.id);
   const { offerContext, count } = req.body as { offerContext?: string; count?: number };
+  console.log(`[POST /targets/${id}/generate] Request body:`, req.body);
   if (!offerContext) return res.status(400).json({ error: 'offerContext is required' });
   try {
     const messages = await messageService.generate(id, offerContext, count ?? 2);
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/targets/:id/discard-all', async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    await messageService.discardAll(id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/targets/:id/regenerate', async (req, res) => {
+  const id = Number(req.params.id);
+  const { offerContext, count } = req.body as { offerContext?: string; count?: number };
+  if (!offerContext) return res.status(400).json({ error: 'offerContext is required' });
+  try {
+    const messages = await messageService.regenerate(id, offerContext, count ?? 2);
     res.json(messages);
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
@@ -107,14 +135,70 @@ app.patch('/messages/:id', async (req, res) => {
   }
 });
 
+app.delete('/messages/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    await messageService.deleteMessage(id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
 app.get('/export/approved', async (_req, res) => {
-  const messages = await messageService.exportApproved();
-  const header = 'name,linkedinUrl,message\n';
+  const messages = await messageService.exportNewApproved();
+  const header = 'name,role,company,linkedinUrl,approvedMessage\n';
   const rows = messages
-    .map((m) => `${m.target.name},${m.target.linkedinUrl},"${m.content.replace(/"/g, '""')}"`)
+    .map((m) => {
+      const name = m.target.name;
+      const role = m.target.role ?? '';
+      const company = m.target.company ?? '';
+      const linkedinUrl = m.target.linkedinUrl;
+      const message = m.content.replace(/"/g, '""');
+      return `"${name}","${role}","${company}","${linkedinUrl}","${message}"`;
+    })
     .join('\n');
   res.setHeader('Content-Type', 'text/csv');
   res.send(header + rows);
+});
+
+app.get('/export/stats', async (_req, res) => {
+  try {
+    const count = await messageService.getNewApprovedCount();
+    res.json({ count });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/config/:key', async (req, res) => {
+  try {
+    const value = await configRepo.get(req.params.key);
+    res.json({ value });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/config/:key', async (req, res) => {
+  try {
+    await configRepo.set(req.params.key, req.body.value);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/reset', async (_req, res) => {
+  try {
+    // Delete in reverse order of dependencies
+    await prisma.message.deleteMany();
+    await prisma.profileSnapshot.deleteMany();
+    await prisma.target.deleteMany();
+    res.json({ message: 'Database reset successfully' });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
 });
 
 app.use((_req, res) => {

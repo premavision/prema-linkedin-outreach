@@ -1,0 +1,4 @@
+name,linkedinUrl,role,company
+Empty URL User,,Tester,Empty Inc
+Bad URL User,htt://bad.url,Dev,Bad Co
+Good User,https://www.linkedin.com/in/williamhgates,Co-chair,Bill & Melinda Gates Foundation
