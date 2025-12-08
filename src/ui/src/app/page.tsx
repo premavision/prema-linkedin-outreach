@@ -26,6 +26,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
   const loadTargets = async () => {
     try {
@@ -56,13 +57,17 @@ export default function DashboardPage() {
 
     const handleSaveConfig = async () => {
     try {
+      setSaveStatus('Saving...');
       await fetch(`${apiBase}/config/offerContext`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ value: offerContext }),
       });
+      setSaveStatus('Saved!');
+      setTimeout(() => setSaveStatus(null), 2000);
     } catch (error) {
       console.error('Error saving config:', error);
+      setSaveStatus('Error saving');
     }
   };
 
@@ -238,7 +243,10 @@ export default function DashboardPage() {
               <FileText className="h-5 w-5 text-slate-500" />
               Offer Context
             </CardTitle>
-            <CardDescription className="mt-2">Define the value proposition for your outreach.</CardDescription>
+            <CardDescription className="mt-2 flex items-center justify-between">
+              Define the value proposition for your outreach.
+              {saveStatus && <span className="text-sm text-blue-600 font-medium">{saveStatus}</span>}
+            </CardDescription>
           </CardHeader>
           <CardContent className="pt-2">
             <div className="space-y-4">
