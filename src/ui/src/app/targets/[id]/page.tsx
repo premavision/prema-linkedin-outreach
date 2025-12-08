@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Check, RotateCw, Loader2, AlertCircle, Search, Wand2, User, Building, MapPin, Trash2 } from 'lucide-react';
+import { ArrowLeft, Save, Check, RotateCw, Loader2, AlertCircle, Search, Wand2, User, Building, MapPin, Trash2, Undo2 } from 'lucide-react';
 import { Button } from '../../../components/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/Card';
 import { Textarea } from '../../../components/Textarea';
@@ -166,6 +166,25 @@ export default function TargetDetailsPage() {
     } catch (err) {
       console.error(err);
       alert('Failed to approve message');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleUnapprove = async (messageId: number) => {
+    setActionLoading(`unapprove-${messageId}`);
+    try {
+      const res = await fetch(`${apiBase}/messages/${messageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'DRAFT' })
+      });
+      if (!res.ok) throw new Error('Unapprove failed');
+      const updated = await res.json();
+      setMessages(messages.map(m => m.id === messageId ? updated : m));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to unapprove message');
     } finally {
       setActionLoading(null);
     }
@@ -345,6 +364,20 @@ export default function TargetDetailsPage() {
                           </Button>
                         )}
                         
+                        {msg.status === 'APPROVED' && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="text-slate-500 hover:text-slate-900"
+                            onClick={() => handleUnapprove(msg.id)}
+                            disabled={actionLoading === `unapprove-${msg.id}`}
+                            loading={actionLoading === `unapprove-${msg.id}`}
+                          >
+                            <Undo2 className="h-4 w-4 mr-2" />
+                            Undo Approve
+                          </Button>
+                        )}
+
                         {msg.status !== 'APPROVED' && (
                           <div className="flex gap-2">
                             <Button
