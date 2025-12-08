@@ -386,8 +386,7 @@ export default function DashboardPage() {
           <div className="hidden md:grid md:grid-cols-12 bg-slate-50/70 text-slate-500 border-b border-slate-100 text-xs uppercase tracking-wider font-medium">
             <div className="col-span-3 px-8 lg:px-10 py-5">Name</div>
             <div className="col-span-4 px-8 lg:px-10 py-5">Role & Company</div>
-            <div className="col-span-2 px-8 lg:px-10 py-5">Status</div>
-            <div className="col-span-3 px-8 lg:px-10 py-5 text-right">Actions</div>
+            <div className="col-span-5 px-8 lg:px-10 py-5">Status</div>
           </div>
           <div className="divide-y divide-slate-100">
             {targets.map((t) => (
@@ -409,10 +408,10 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </div>
-                <div className="hidden md:block md:col-span-2 md:px-8 md:lg:px-10 md:py-5">
-                  {getStatusBadge(t.status)}
-                </div>
-                <div className="md:col-span-3 md:px-8 md:lg:px-10 md:py-5">
+                <div className="md:col-span-5 md:px-8 md:lg:px-10 md:py-5 flex flex-wrap items-center justify-between gap-3">
+                  <div className="hidden md:block">
+                    {getStatusBadge(t.status)}
+                  </div>
                   <div className="flex justify-end items-center gap-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     {t.status === 'NOT_VISITED' || t.status === 'BROKEN' ? (
                       <Button
