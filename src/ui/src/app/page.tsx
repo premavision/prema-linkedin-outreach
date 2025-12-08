@@ -29,6 +29,13 @@ export default function DashboardPage() {
 
   const loadTargets = async () => {
     try {
+      // Load config first
+      const configRes = await fetch(`${apiBase}/config/offerContext`, { cache: 'no-store' });
+      if (configRes.ok) {
+        const { value } = await configRes.json();
+        if (value) setOfferContext(value);
+      }
+
       const res = await fetch(`${apiBase}/targets`, { cache: 'no-store' });
       if (!res.ok) {
         console.error('Failed to load targets:', res.status, res.statusText);
@@ -46,6 +53,18 @@ export default function DashboardPage() {
   useEffect(() => {
     loadTargets();
   }, []);
+
+    const handleSaveConfig = async () => {
+    try {
+      await fetch(`${apiBase}/config/offerContext`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: offerContext }),
+      });
+    } catch (error) {
+      console.error('Error saving config:', error);
+    }
+  };
 
   const handleImport = async (e: FormEvent) => {
     e.preventDefault();
@@ -227,7 +246,8 @@ export default function DashboardPage() {
                 rows={5}
                 className="resize-none focus:ring-blue-500/20 min-h-[140px] text-base"
                 value={offerContext}
-                onChange={(e) => setOfferContext(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setOfferContext(e.target.value)}
+                onBlur={handleSaveConfig}
                 placeholder="Describe your offer..."
               />
               <p className="text-xs text-slate-400 flex items-center gap-1.5">

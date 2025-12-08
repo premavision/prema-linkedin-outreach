@@ -47,3 +47,8 @@ model Message {
   updatedAt DateTime @updatedAt
   target    Target   @relation(fields: [targetId], references: [id])
 }
+
+model Config {
+  key   String @id
+  value String
+}

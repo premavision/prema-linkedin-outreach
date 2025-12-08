@@ -5,6 +5,7 @@ import { config } from '../../config/env.js';
 import { TargetRepository } from '../persistence/repository/TargetRepository.js';
 import { ProfileRepository } from '../persistence/repository/ProfileRepository.js';
 import { MessageRepository } from '../persistence/repository/MessageRepository.js';
+import { ConfigRepository } from '../persistence/repository/ConfigRepository.js';
 import { TargetService } from '../../domain/services/TargetService.js';
 import { ScrapeService } from '../../domain/services/ScrapeService.js';
 import { MessageService } from '../../domain/services/MessageService.js';
@@ -24,6 +25,7 @@ app.use(express.json());
 const targetRepo = new TargetRepository();
 const profileRepo = new ProfileRepository();
 const messageRepo = new MessageRepository();
+const configRepo = new ConfigRepository();
 
 let scraper: Scraper;
 if (config.scraperMode === 'playwright') {
@@ -115,6 +117,24 @@ app.get('/export/approved', async (_req, res) => {
     .join('\n');
   res.setHeader('Content-Type', 'text/csv');
   res.send(header + rows);
+});
+
+app.get('/config/:key', async (req, res) => {
+  try {
+    const value = await configRepo.get(req.params.key);
+    res.json({ value });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/config/:key', async (req, res) => {
+  try {
+    await configRepo.set(req.params.key, req.body.value);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
 });
 
 app.post('/reset', async (_req, res) => {
