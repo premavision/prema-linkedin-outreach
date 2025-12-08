@@ -90,6 +90,16 @@ app.post('/targets/:id/generate', async (req, res) => {
   }
 });
 
+app.post('/targets/:id/discard-all', async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    await messageService.discardAll(id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 app.post('/targets/:id/regenerate', async (req, res) => {
   const id = Number(req.params.id);
   const { offerContext, count } = req.body as { offerContext?: string; count?: number };

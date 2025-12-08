@@ -50,6 +50,21 @@ class MessageService {
     return message;
   }
 
+  async discardAll(targetId: number) {
+    const messages = await this.messageRepo.listByTarget(targetId);
+    for (const msg of messages) {
+      if (msg.status !== 'DISCARDED') {
+        await this.messageRepo.updateMessage(msg.id, { status: 'DISCARDED' });
+      }
+    }
+    
+    // Also update target status back to PROFILE_SCRAPED if it was MESSAGE_DRAFTED or APPROVED
+    const target = await this.targetRepo.findById(targetId);
+    if (target && (target.status === 'MESSAGE_DRAFTED' || target.status === 'APPROVED')) {
+       await this.targetRepo.updateStatus(targetId, 'PROFILE_SCRAPED');
+    }
+  }
+
   async regenerate(targetId: number, offerContext: string, count = 2) {
     // Mark all existing as DISCARDED
     const existing = await this.messageRepo.listByTarget(targetId);

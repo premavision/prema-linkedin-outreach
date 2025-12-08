@@ -100,6 +100,10 @@ export default function TargetDetailsPage() {
   };
 
   const handleGenerate = async () => {
+    if (!offerContext.trim()) {
+      alert('Please enter an offer context before generating drafts.');
+      return;
+    }
     setActionLoading('generate');
     try {
       const res = await fetch(`${apiBase}/targets/${id}/generate`, {
@@ -228,18 +232,21 @@ export default function TargetDetailsPage() {
     }
   };
 
-  const handleRegenerate = async () => {
-    if (!confirm('This will discard all current drafts and generate new ones. Continue?')) return;
-    setActionLoading('regenerate');
+  const handleStartOver = async () => {
+    if (!confirm('This will discard all current drafts. You will be able to update the context and generate new ones. Continue?')) return;
+    setActionLoading('start-over');
     try {
-      const res = await fetch(`${apiBase}/targets/${id}/regenerate`, {
+      const res = await fetch(`${apiBase}/targets/${id}/discard-all`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ offerContext, count: 2 })
       });
-      if (!res.ok) throw new Error('Regeneration failed');
-      const newMessages = await res.json();
-      setMessages(newMessages);
+      if (!res.ok) throw new Error('Failed to discard drafts');
+      
+      // Refresh messages (should be all discarded/filtered out)
+      const messagesRes = await fetch(`${apiBase}/targets/${id}/messages`);
+      if (messagesRes.ok) {
+        setMessages(await messagesRes.json());
+      }
+      
       // Refresh target status
       const targetRes = await fetch(`${apiBase}/targets/${id}`);
       if (targetRes.ok) {
@@ -248,7 +255,7 @@ export default function TargetDetailsPage() {
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to regenerate messages');
+      alert('Failed to start over');
     } finally {
       setActionLoading(null);
     }
@@ -495,9 +502,9 @@ export default function TargetDetailsPage() {
                         variant="ghost" 
                         size="sm" 
                         className="w-full text-slate-500 hover:text-blue-600"
-                        onClick={handleRegenerate}
-                        disabled={actionLoading === 'regenerate'}
-                        loading={actionLoading === 'regenerate'}
+                        onClick={handleStartOver}
+                        disabled={actionLoading === 'start-over'}
+                        loading={actionLoading === 'start-over'}
                       >
                         <RotateCw className="h-4 w-4 mr-2" />
                         Start Over
