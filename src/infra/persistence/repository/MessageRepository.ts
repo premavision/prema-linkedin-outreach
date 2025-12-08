@@ -20,6 +20,10 @@ export class MessageRepository {
     return prisma.message.update({ where: { id }, data });
   }
 
+  async deleteMessage(id: number) {
+    return prisma.message.delete({ where: { id } });
+  }
+
   async listApproved() {
     return prisma.message.findMany({ where: { status: 'APPROVED' }, include: { target: true } });
   }

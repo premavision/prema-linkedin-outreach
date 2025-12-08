@@ -30,6 +30,10 @@ class MessageService {
     return this.messageRepo.updateMessage(id, data);
   }
 
+  deleteMessage(id: number) {
+    return this.messageRepo.deleteMessage(id);
+  }
+
   exportApproved() {
     return this.messageRepo.listApproved();
   }

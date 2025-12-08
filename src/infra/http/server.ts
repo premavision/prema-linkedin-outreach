@@ -110,6 +110,16 @@ app.patch('/messages/:id', async (req, res) => {
   }
 });
 
+app.delete('/messages/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    await messageService.deleteMessage(id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
 app.get('/export/approved', async (_req, res) => {
   const messages = await messageService.exportApproved();
   const header = 'name,linkedinUrl,message\n';

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Save, Check, RotateCw, Loader2, AlertCircle, Search, Wand2, User, Building, MapPin } from 'lucide-react';
+import { ArrowLeft, Save, Check, RotateCw, Loader2, AlertCircle, Search, Wand2, User, Building, MapPin, Trash2 } from 'lucide-react';
 import { Button } from '../../../components/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/Card';
 import { Textarea } from '../../../components/Textarea';
@@ -171,6 +171,23 @@ export default function TargetDetailsPage() {
     }
   };
 
+  const handleDiscard = async (messageId: number) => {
+    if (!confirm('Are you sure you want to discard this draft?')) return;
+    setActionLoading(`discard-${messageId}`);
+    try {
+      const res = await fetch(`${apiBase}/messages/${messageId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Discard failed');
+      setMessages(messages.filter(m => m.id !== messageId));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to discard message');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const handleTextChange = (id: number, val: string) => {
     setEdits(prev => ({ ...prev, [id]: val }));
   };
@@ -303,7 +320,6 @@ export default function TargetDetailsPage() {
                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                           Option {idx + 1}
                           {msg.status === 'APPROVED' && <span className="ml-2 text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">Approved</span>}
-                          {msg.status === 'DISCARDED' && <span className="ml-2 text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">Discarded</span>}
                         </span>
                       </div>
                       
@@ -330,16 +346,29 @@ export default function TargetDetailsPage() {
                         )}
                         
                         {msg.status !== 'APPROVED' && (
-                          <Button 
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                            onClick={() => handleApprove(msg.id)}
-                            disabled={actionLoading === `approve-${msg.id}`}
-                            loading={actionLoading === `approve-${msg.id}`}
-                          >
-                            <Check className="h-4 w-4 mr-2" />
-                            Approve
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-red-600 border-red-200 hover:bg-red-50"
+                              onClick={() => handleDiscard(msg.id)}
+                              disabled={actionLoading === `discard-${msg.id}`}
+                              loading={actionLoading === `discard-${msg.id}`}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Discard
+                            </Button>
+                            <Button 
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              onClick={() => handleApprove(msg.id)}
+                              disabled={actionLoading === `approve-${msg.id}`}
+                              loading={actionLoading === `approve-${msg.id}`}
+                            >
+                              <Check className="h-4 w-4 mr-2" />
+                              Approve
+                            </Button>
+                          </div>
                         )}
                       </div>
                     </div>
