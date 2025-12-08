@@ -162,7 +162,7 @@ export default function DashboardPage() {
       NOT_VISITED: 'Not Visited',
       PROFILE_SCRAPED: 'Profile Scraped',
       MESSAGE_DRAFTED: 'Drafts Ready',
-      APPROVED: 'Approved',
+      APPROVED: 'Ready to Export',
     };
 
     const style = styles[status] ?? styles.default;
@@ -317,7 +317,7 @@ export default function DashboardPage() {
                           >
                             {loadingId === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
                           </Button>
-                        ) : (
+                        ) : t.status !== 'APPROVED' ? (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -328,7 +328,7 @@ export default function DashboardPage() {
                           >
                             {loadingId === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
                           </Button>
-                        )}
+                        ) : null}
                         <div className="w-px h-5 bg-slate-200 mx-1" />
                         <a href={t.linkedinUrl} target="_blank" rel="noopener noreferrer" title="Open LinkedIn">
                           <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 hover:text-[#0077b5] hover:bg-[#0077b5]/10">

@@ -161,8 +161,17 @@ export default function TargetDetailsPage() {
         body: JSON.stringify({ status: 'APPROVED' })
       });
       if (!res.ok) throw new Error('Approval failed');
-      const updated = await res.json();
-      setMessages(messages.map(m => m.id === messageId ? updated : m));
+      // Re-fetch all messages to ensure we have the correct state for all drafts (e.g. others unapproved)
+      const messagesRes = await fetch(`${apiBase}/targets/${id}/messages`);
+      if (messagesRes.ok) {
+        setMessages(await messagesRes.json());
+      }
+      // Refresh target to update status badge
+      const targetRes = await fetch(`${apiBase}/targets/${id}`);
+      if (targetRes.ok) {
+        const t = await targetRes.json();
+        setTarget(t);
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to approve message');
@@ -180,8 +189,17 @@ export default function TargetDetailsPage() {
         body: JSON.stringify({ status: 'DRAFT' })
       });
       if (!res.ok) throw new Error('Unapprove failed');
-      const updated = await res.json();
-      setMessages(messages.map(m => m.id === messageId ? updated : m));
+      // Re-fetch all messages to ensure consistent state
+      const messagesRes = await fetch(`${apiBase}/targets/${id}/messages`);
+      if (messagesRes.ok) {
+        setMessages(await messagesRes.json());
+      }
+      // Refresh target to update status badge
+      const targetRes = await fetch(`${apiBase}/targets/${id}`);
+      if (targetRes.ok) {
+        const t = await targetRes.json();
+        setTarget(t);
+      }
     } catch (err) {
       console.error(err);
       alert('Failed to unapprove message');
@@ -191,17 +209,46 @@ export default function TargetDetailsPage() {
   };
 
   const handleDiscard = async (messageId: number) => {
-    if (!confirm('Are you sure you want to discard this draft?')) return;
+    // if (!confirm('Are you sure you want to discard this draft?')) return; // Optional confirmation
     setActionLoading(`discard-${messageId}`);
     try {
       const res = await fetch(`${apiBase}/messages/${messageId}`, {
-        method: 'DELETE',
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'DISCARDED' })
       });
       if (!res.ok) throw new Error('Discard failed');
-      setMessages(messages.filter(m => m.id !== messageId));
+      // Remove from view by marking discarded
+      setMessages(messages.map(m => m.id === messageId ? { ...m, status: 'DISCARDED' } : m));
     } catch (err) {
       console.error(err);
       alert('Failed to discard message');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRegenerate = async () => {
+    if (!confirm('This will discard all current drafts and generate new ones. Continue?')) return;
+    setActionLoading('regenerate');
+    try {
+      const res = await fetch(`${apiBase}/targets/${id}/regenerate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ offerContext, count: 2 })
+      });
+      if (!res.ok) throw new Error('Regeneration failed');
+      const newMessages = await res.json();
+      setMessages(newMessages);
+      // Refresh target status
+      const targetRes = await fetch(`${apiBase}/targets/${id}`);
+      if (targetRes.ok) {
+        const t = await targetRes.json();
+        setTarget(t);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to regenerate messages');
     } finally {
       setActionLoading(null);
     }
@@ -230,7 +277,12 @@ export default function TargetDetailsPage() {
     };
 
     const style = styles[status] ?? styles.default;
-    const label = labels[status] ?? rawStatus ?? 'Unknown';
+    let label = labels[status] ?? rawStatus ?? 'Unknown';
+
+    // Override label for APPROVED status
+    if (status === 'APPROVED') {
+      label = 'Ready to Export';
+    }
 
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${style}`}>
@@ -362,9 +414,9 @@ export default function TargetDetailsPage() {
               <CardDescription>Generated messages based on profile and offer.</CardDescription>
             </CardHeader>
             <CardContent>
-              {messages.length > 0 ? (
+              {messages.filter(m => m.status !== 'DISCARDED').length > 0 ? (
                 <div className="space-y-8">
-                  {messages.map((msg, idx) => (
+                  {messages.filter(m => m.status !== 'DISCARDED').map((msg, idx) => (
                     <div key={msg.id} className="relative group">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -443,7 +495,9 @@ export default function TargetDetailsPage() {
                         variant="ghost" 
                         size="sm" 
                         className="w-full text-slate-500 hover:text-blue-600"
-                        onClick={() => setMessages([])} // Simple way to reset to generate view or add regenerate logic
+                        onClick={handleRegenerate}
+                        disabled={actionLoading === 'regenerate'}
+                        loading={actionLoading === 'regenerate'}
                       >
                         <RotateCw className="h-4 w-4 mr-2" />
                         Start Over

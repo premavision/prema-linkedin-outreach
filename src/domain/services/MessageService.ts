@@ -26,8 +26,41 @@ class MessageService {
     return this.messageRepo.listByTarget(targetId);
   }
 
-  updateMessage(id: number, data: { content?: string; status?: 'DRAFT' | 'APPROVED' | 'DISCARDED' }) {
-    return this.messageRepo.updateMessage(id, data);
+  async updateMessage(id: number, data: { content?: string; status?: 'DRAFT' | 'APPROVED' | 'DISCARDED' }) {
+    const message = await this.messageRepo.updateMessage(id, data);
+
+    if (data.status === 'APPROVED') {
+      // Unapprove others
+      const allMessages = await this.messageRepo.listByTarget(message.targetId);
+      const others = allMessages.filter((m) => m.id !== id && m.status === 'APPROVED');
+      for (const other of others) {
+        await this.messageRepo.updateMessage(other.id, { status: 'DRAFT' });
+      }
+      
+      await this.targetRepo.updateStatus(message.targetId, 'APPROVED');
+    } else if (data.status === 'DRAFT') {
+      // If unapproving, check if there are any other approved messages
+      const messages = await this.messageRepo.listByTarget(message.targetId);
+      const hasApproved = messages.some((m) => m.status === 'APPROVED');
+      if (!hasApproved) {
+        await this.targetRepo.updateStatus(message.targetId, 'MESSAGE_DRAFTED');
+      }
+    }
+
+    return message;
+  }
+
+  async regenerate(targetId: number, offerContext: string, count = 2) {
+    // Mark all existing as DISCARDED
+    const existing = await this.messageRepo.listByTarget(targetId);
+    for (const msg of existing) {
+      if (msg.status !== 'DISCARDED') {
+        await this.messageRepo.updateMessage(msg.id, { status: 'DISCARDED' });
+      }
+    }
+    
+    // Generate new ones
+    return this.generate(targetId, offerContext, count);
   }
 
   deleteMessage(id: number) {

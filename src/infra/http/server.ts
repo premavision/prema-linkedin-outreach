@@ -90,6 +90,18 @@ app.post('/targets/:id/generate', async (req, res) => {
   }
 });
 
+app.post('/targets/:id/regenerate', async (req, res) => {
+  const id = Number(req.params.id);
+  const { offerContext, count } = req.body as { offerContext?: string; count?: number };
+  if (!offerContext) return res.status(400).json({ error: 'offerContext is required' });
+  try {
+    const messages = await messageService.regenerate(id, offerContext, count ?? 2);
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 app.get('/targets/:id/messages', async (req, res) => {
   const id = Number(req.params.id);
   const messages = await messageService.list(id);
@@ -122,9 +134,16 @@ app.delete('/messages/:id', async (req, res) => {
 
 app.get('/export/approved', async (_req, res) => {
   const messages = await messageService.exportApproved();
-  const header = 'name,linkedinUrl,message\n';
+  const header = 'name,role,company,linkedinUrl,approvedMessage\n';
   const rows = messages
-    .map((m) => `${m.target.name},${m.target.linkedinUrl},"${m.content.replace(/"/g, '""')}"`)
+    .map((m) => {
+      const name = m.target.name;
+      const role = m.target.role ?? '';
+      const company = m.target.company ?? '';
+      const linkedinUrl = m.target.linkedinUrl;
+      const message = m.content.replace(/"/g, '""');
+      return `"${name}","${role}","${company}","${linkedinUrl}","${message}"`;
+    })
     .join('\n');
   res.setHeader('Content-Type', 'text/csv');
   res.send(header + rows);
