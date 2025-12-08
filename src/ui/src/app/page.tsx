@@ -306,24 +306,24 @@ export default function DashboardPage() {
         </div>
 
         <div className="rounded-2xl border border-slate-100 bg-white shadow-2xl ring-1 ring-slate-100 overflow-hidden">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-slate-50/70 text-slate-500 border-b border-slate-100">
-            <tr>
-              <th className="px-8 lg:px-10 py-5 font-medium w-[25%] text-xs uppercase tracking-wider">Name</th>
-              <th className="px-8 lg:px-10 py-5 font-medium w-[25%] text-xs uppercase tracking-wider">Role & Company</th>
-              <th className="px-8 lg:px-10 py-5 font-medium w-[20%] text-xs uppercase tracking-wider">Status</th>
-              <th className="px-8 lg:px-10 py-5 font-medium text-right w-[30%] text-xs uppercase tracking-wider">Actions</th>
-            </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+          <div className="hidden md:grid md:grid-cols-12 bg-slate-50/70 text-slate-500 border-b border-slate-100 text-xs uppercase tracking-wider font-medium">
+            <div className="col-span-3 px-8 lg:px-10 py-5">Name</div>
+            <div className="col-span-4 px-8 lg:px-10 py-5">Role & Company</div>
+            <div className="col-span-2 px-8 lg:px-10 py-5">Status</div>
+            <div className="col-span-3 px-8 lg:px-10 py-5 text-right">Actions</div>
+          </div>
+          <div className="divide-y divide-slate-100">
             {targets.map((t) => (
-              <tr key={t.id} className="group odd:bg-white even:bg-slate-50/40 hover:bg-slate-100/60 transition-colors">
-                <td className="px-8 lg:px-10 py-5">
+              <div key={t.id} className="group md:grid md:grid-cols-12 md:items-center odd:bg-white even:bg-slate-50/40 hover:bg-slate-100/60 transition-colors p-5 md:p-0">
+                <div className="md:col-span-3 md:px-8 md:lg:px-10 md:py-5 flex justify-between items-start mb-2 md:mb-0">
                   <Link href={`/targets/${t.id}`} className="font-semibold text-base text-slate-900 hover:text-blue-600 hover:underline decoration-blue-200 underline-offset-4 transition-all">
                     {t.name}
                   </Link>
-                </td>
-                <td className="px-8 lg:px-10 py-5">
+                  <div className="md:hidden">
+                    {getStatusBadge(t.status)}
+                  </div>
+                </div>
+                <div className="md:col-span-4 md:px-8 md:lg:px-10 md:py-5 mb-4 md:mb-0">
                   <div className="space-y-1.5">
                     <div className="font-medium text-slate-700 text-sm">{t.role || '—'}</div>
                     <div className="flex items-center gap-1.5 text-slate-500 text-xs">
@@ -331,11 +331,11 @@ export default function DashboardPage() {
                       {t.company || '—'}
                     </div>
                   </div>
-                </td>
-                <td className="px-8 lg:px-10 py-5">
+                </div>
+                <div className="hidden md:block md:col-span-2 md:px-8 md:lg:px-10 md:py-5">
                   {getStatusBadge(t.status)}
-                </td>
-                <td className="px-8 lg:px-10 py-5 text-right">
+                </div>
+                <div className="md:col-span-3 md:px-8 md:lg:px-10 md:py-5">
                   <div className="flex justify-end items-center gap-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     {t.status === 'NOT_VISITED' || t.status === 'BROKEN' ? (
                       <Button
@@ -359,7 +359,7 @@ export default function DashboardPage() {
                         Draft
                       </Button>
                     ) : null}
-                    <div className="w-px h-5 bg-slate-200 mx-1" />
+                    <div className="w-px h-5 bg-slate-200 mx-1 hidden md:block" />
                     {t.status === 'BROKEN' ? (
                       <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-300" disabled>
                         <Linkedin className="h-4 w-4" />
@@ -372,26 +372,23 @@ export default function DashboardPage() {
                       </a>
                     )}
                   </div>
-                </td>
-              </tr>
+                </div>
+              </div>
             ))}
             {targets.length === 0 && (
-              <tr>
-                <td colSpan={4} className="p-16 text-center bg-white">
-                  <div className="flex flex-col items-center gap-4 text-slate-500">
-                    <div className="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center">
-                      <User className="h-7 w-7 text-slate-400" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="font-medium text-lg text-slate-900">No targets yet</p>
-                      <p className="text-slate-500">Upload a CSV file to get started.</p>
-                    </div>
+              <div className="p-16 text-center bg-white">
+                <div className="flex flex-col items-center gap-4 text-slate-500">
+                  <div className="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center">
+                    <User className="h-7 w-7 text-slate-400" />
                   </div>
-                </td>
-              </tr>
+                  <div className="space-y-1">
+                    <p className="font-medium text-lg text-slate-900">No targets yet</p>
+                    <p className="text-slate-500">Upload a CSV file to get started.</p>
+                  </div>
+                </div>
+              </div>
             )}
-            </tbody>
-          </table>
+          </div>
         </div>
       </div>
     </div>
