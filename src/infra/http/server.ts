@@ -80,6 +80,7 @@ app.post('/targets/:id/scrape', async (req, res) => {
 app.post('/targets/:id/generate', async (req, res) => {
   const id = Number(req.params.id);
   const { offerContext, count } = req.body as { offerContext?: string; count?: number };
+  console.log(`[POST /targets/${id}/generate] Request body:`, req.body);
   if (!offerContext) return res.status(400).json({ error: 'offerContext is required' });
   try {
     const messages = await messageService.generate(id, offerContext, count ?? 2);

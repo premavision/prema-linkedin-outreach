@@ -14,5 +14,18 @@ export const outreachPrompt = (input: {
     .filter(Boolean)
     .join('\n');
 
-  return `You are assisting a human sales consultant. Draft ${input.count} concise LinkedIn outreach messages. Each should:\n- be professional and friendly, not pushy\n- mention specifics from the profile\n- invite a short intro call\n- avoid sounding automated\n\nOffer context:\n${input.offerContext}\n\nProspect:\nName: ${input.name}\n${profileBits}`;
+  return `You are assisting a human sales consultant. Draft ${input.count} concise LinkedIn outreach messages. Each should:
+- be professional and friendly, not pushy
+- mention specifics from the profile
+- invite a short intro call
+- avoid sounding automated
+
+Offer context:
+${input.offerContext}
+
+Prospect:
+Name: ${input.name}
+${profileBits}
+
+IMPORTANT: Separate each message with "---MESSAGE_SEPARATOR---". Do not include any other labels or numbering (like "Variant 1" or "Message 1") in the output. Just the message body. Do not include any conversational filler before or after the messages. Start directly with the first message or the separator.`;
 };
