@@ -7,4 +7,5 @@ npm-debug.log*
 dist
 .npm-cache
 tmp
+.tmp
 test-results
