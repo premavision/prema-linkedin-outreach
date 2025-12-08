@@ -1,79 +1,387 @@
 'use client';
 
-import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft, Save, Check, RotateCw, Loader2, AlertCircle, Search, Wand2, User, Building, MapPin } from 'lucide-react';
+import { Button } from '../../../components/Button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../../components/Card';
+import { Textarea } from '../../../components/Textarea';
+
+const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
+
+type MessageStatus = 'DRAFT' | 'APPROVED' | 'DISCARDED';
+
+interface Message {
+  id: number;
+  targetId: number;
+  variant: string;
+  content: string;
+  status: MessageStatus;
+  createdAt: string;
+}
+
+interface Profile {
+  headline?: string;
+  currentRole?: string;
+  company?: string;
+  location?: string;
+  about?: string;
+}
+
+interface Target {
+  id: number;
+  name: string;
+  linkedinUrl: string;
+  role?: string;
+  company?: string;
+  status: string;
+  profile?: Profile | null;
+  messages?: Message[];
+}
 
 export default function TargetDetailsPage() {
   const params = useParams();
-  const [profile, setProfile] = useState<any>(null);
-  const [draft, setDraft] = useState('');
-  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const id = Number(params.id);
 
-  const generate = async () => {
+  const [target, setTarget] = useState<Target | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<string | null>(null); // 'scrape', 'generate', 'save-ID', 'approve-ID'
+  const [offerContext, setOfferContext] = useState('We help teams build safe AI automations that keep humans in control.');
+  const [error, setError] = useState<string | null>(null);
+  const [edits, setEdits] = useState<Record<number, string>>({});
+
+  useEffect(() => {
+    if (!id) return;
+    fetchData();
+  }, [id]);
+
+  const fetchData = async () => {
     setLoading(true);
     try {
-      // For demo, we just pass a mock URL based on ID or something
-      const res = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ targetId: params.id, url: 'profile1' }) // Hardcoded for demo
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        alert(`Error: ${errorData.message || 'Failed to generate outreach'}`);
-        setLoading(false);
-        return;
-      }
-
+      const res = await fetch(`${apiBase}/targets/${id}`);
+      if (!res.ok) throw new Error('Failed to load target');
       const data = await res.json();
-      setProfile(data.profile);
-      setDraft(data.draft);
-    } catch (error) {
-      console.error('Error generating outreach:', error);
-      alert('Failed to generate outreach. Check console for details.');
+      setTarget(data);
+      if (data.messages) {
+        setMessages(data.messages);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Failed to load data. Make sure the backend is running.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleScrape = async () => {
+    setActionLoading('scrape');
+    try {
+      const res = await fetch(`${apiBase}/targets/${id}/scrape`, { method: 'POST' });
+      if (!res.ok) throw new Error('Scrape failed');
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to scrape profile');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleGenerate = async () => {
+    setActionLoading('generate');
+    try {
+      const res = await fetch(`${apiBase}/targets/${id}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ offerContext, count: 2 })
+      });
+      if (!res.ok) throw new Error('Generation failed');
+      const newMessages = await res.json();
+      setMessages(newMessages);
+      // Refresh target to update status
+      const targetRes = await fetch(`${apiBase}/targets/${id}`);
+      if (targetRes.ok) {
+        const t = await targetRes.json();
+        setTarget(t);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to generate messages');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSaveDraft = async (messageId: number) => {
+    const content = edits[messageId];
+    if (content === undefined) return; // No changes
+
+    setActionLoading(`save-${messageId}`);
+    try {
+      const res = await fetch(`${apiBase}/messages/${messageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, status: 'DRAFT' })
+      });
+      if (!res.ok) throw new Error('Save failed');
+      const updated = await res.json();
+      setMessages(messages.map(m => m.id === messageId ? updated : m));
+      // Clear edit state for this message
+      setEdits(prev => {
+        const next = { ...prev };
+        delete next[messageId];
+        return next;
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save draft');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleApprove = async (messageId: number) => {
+    setActionLoading(`approve-${messageId}`);
+    try {
+      const res = await fetch(`${apiBase}/messages/${messageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'APPROVED' })
+      });
+      if (!res.ok) throw new Error('Approval failed');
+      const updated = await res.json();
+      setMessages(messages.map(m => m.id === messageId ? updated : m));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to approve message');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleTextChange = (id: number, val: string) => {
+    setEdits(prev => ({ ...prev, [id]: val }));
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (error || !target) {
+    return (
+      <div className="max-w-4xl mx-auto p-8 text-center">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 mb-4">
+          <AlertCircle className="h-8 w-8 text-red-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">Error Loading Target</h2>
+        <p className="text-slate-500 mb-6">{error || 'Target not found'}</p>
+        <Link href="/">
+          <Button variant="outline">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Target {params.id}</h1>
-
-      {!profile && (
-        <button onClick={generate} disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded">
-          {loading ? 'Generating...' : 'Load Profile & Generate Draft'}
-        </button>
-      )}
-
-      {profile && (
-        <div className="grid grid-cols-2 gap-8 mt-8">
-          <div className="border p-4 rounded">
-            <h2 className="font-bold mb-4">Profile Data</h2>
-            <div className="space-y-2">
-              <div><span className="font-semibold">Headline:</span> {profile.headline}</div>
-              <div><span className="font-semibold">Role:</span> {profile.currentRole}</div>
-              <div><span className="font-semibold">Company:</span> {profile.company}</div>
-              <div><span className="font-semibold">Location:</span> {profile.location}</div>
-              <div className="mt-4 p-2 bg-gray-50 text-sm">{profile.about}</div>
-            </div>
-          </div>
-
-          <div className="border p-4 rounded">
-            <h2 className="font-bold mb-4">Outreach Draft</h2>
-            <textarea
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              className="w-full h-64 p-2 border rounded"
-            />
-            <div className="mt-4 flex gap-2">
-              <button className="bg-green-600 text-white px-4 py-2 rounded">Approve</button>
-              <button className="bg-gray-200 text-gray-800 px-4 py-2 rounded">Regenerate</button>
+    <div className="max-w-6xl mx-auto space-y-8 pb-20 px-4 sm:px-0 pt-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="rounded-full h-10 w-10 p-0">
+              <ArrowLeft className="h-5 w-5 text-slate-500" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">{target.name}</h1>
+            <div className="flex items-center gap-2 text-slate-500 text-sm mt-1">
+              <Building className="h-3.5 w-3.5" />
+              <span>{target.company || 'Unknown Company'}</span>
+              <span className="text-slate-300">•</span>
+              <span>{target.role || 'Unknown Role'}</span>
             </div>
           </div>
         </div>
-      )}
+        <a href={target.linkedinUrl} target="_blank" rel="noopener noreferrer">
+          <Button variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+            View on LinkedIn
+          </Button>
+        </a>
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-2">
+        {/* Profile Section */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-slate-500" />
+                Profile Data
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {target.profile ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-4 text-sm">
+                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <span className="text-slate-500 block text-xs uppercase tracking-wider font-medium mb-1">Headline</span>
+                      <div className="font-medium text-slate-900">{target.profile.headline}</div>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                      <span className="text-slate-500 block text-xs uppercase tracking-wider font-medium mb-1">Location</span>
+                      <div className="flex items-center gap-1.5 font-medium text-slate-900">
+                        <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                        {target.profile.location}
+                      </div>
+                    </div>
+                    {target.profile.about && (
+                      <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                        <span className="text-slate-500 block text-xs uppercase tracking-wider font-medium mb-1">About</span>
+                        <div className="text-slate-700 whitespace-pre-wrap">{target.profile.about}</div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-10 space-y-4">
+                  <div className="h-12 w-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto">
+                    <Search className="h-6 w-6 text-slate-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-slate-900">No profile data yet</p>
+                    <p className="text-sm text-slate-500 mt-1">Scrape the LinkedIn profile to get started.</p>
+                  </div>
+                  <Button 
+                    onClick={handleScrape} 
+                    disabled={actionLoading === 'scrape'} 
+                    loading={actionLoading === 'scrape'}
+                  >
+                    <Search className="h-4 w-4 mr-2" />
+                    Scrape Profile
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Outreach Section */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wand2 className="h-5 w-5 text-slate-500" />
+                Outreach Drafts
+              </CardTitle>
+              <CardDescription>Generated messages based on profile and offer.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {messages.length > 0 ? (
+                <div className="space-y-8">
+                  {messages.map((msg, idx) => (
+                    <div key={msg.id} className="relative group">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                          Option {idx + 1}
+                          {msg.status === 'APPROVED' && <span className="ml-2 text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">Approved</span>}
+                          {msg.status === 'DISCARDED' && <span className="ml-2 text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100">Discarded</span>}
+                        </span>
+                      </div>
+                      
+                      <Textarea
+                        value={edits[msg.id] ?? msg.content}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleTextChange(msg.id, e.target.value)}
+                        className={`min-h-[200px] text-base leading-relaxed p-4 transition-colors ${
+                          msg.status === 'APPROVED' ? 'border-green-200 bg-green-50/30' : ''
+                        }`}
+                      />
+                      
+                      <div className="flex items-center justify-end gap-3 mt-3">
+                        {edits[msg.id] !== undefined && edits[msg.id] !== msg.content && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleSaveDraft(msg.id)}
+                            disabled={actionLoading === `save-${msg.id}`}
+                            loading={actionLoading === `save-${msg.id}`}
+                          >
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Draft
+                          </Button>
+                        )}
+                        
+                        {msg.status !== 'APPROVED' && (
+                          <Button 
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => handleApprove(msg.id)}
+                            disabled={actionLoading === `approve-${msg.id}`}
+                            loading={actionLoading === `approve-${msg.id}`}
+                          >
+                            <Check className="h-4 w-4 mr-2" />
+                            Approve
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <div className="pt-6 border-t border-slate-100">
+                     <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full text-slate-500 hover:text-blue-600"
+                        onClick={() => setMessages([])} // Simple way to reset to generate view or add regenerate logic
+                      >
+                        <RotateCw className="h-4 w-4 mr-2" />
+                        Start Over
+                      </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">Offer Context</label>
+                    <Textarea
+                      value={offerContext}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setOfferContext(e.target.value)}
+                      rows={3}
+                      className="resize-none"
+                    />
+                  </div>
+                  
+                  {target.profile ? (
+                    <Button 
+                      className="w-full" 
+                      onClick={handleGenerate}
+                      disabled={actionLoading === 'generate'}
+                      loading={actionLoading === 'generate'}
+                    >
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      Generate Drafts
+                    </Button>
+                  ) : (
+                    <div className="p-4 bg-orange-50 border border-orange-100 rounded-lg text-sm text-orange-800 flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-orange-600 shrink-0" />
+                      <p>You need to scrape the profile first before generating messages.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
