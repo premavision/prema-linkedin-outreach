@@ -306,26 +306,29 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-6 py-5 text-right">
                       <div className="flex justify-end items-center gap-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-9 w-9 p-0 text-slate-500 hover:text-blue-600 hover:bg-blue-50"
-                          onClick={() => triggerScrape(t.id)}
-                          disabled={loadingId === t.id}
-                          title="Scrape Profile"
-                        >
-                          {loadingId === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-9 w-9 p-0 text-slate-500 hover:text-purple-600 hover:bg-purple-50"
-                          onClick={() => triggerGenerate(t.id)}
-                          disabled={loadingId === t.id}
-                          title="Generate Messages"
-                        >
-                          {loadingId === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-                        </Button>
+                        {t.status === 'NOT_VISITED' ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 w-9 p-0 text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                            onClick={() => triggerScrape(t.id)}
+                            disabled={loadingId === t.id}
+                            title="Scrape Profile"
+                          >
+                            {loadingId === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 w-9 p-0 text-slate-500 hover:text-purple-600 hover:bg-purple-50"
+                            onClick={() => triggerGenerate(t.id)}
+                            disabled={loadingId === t.id}
+                            title="Generate Messages"
+                          >
+                            {loadingId === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                          </Button>
+                        )}
                         <div className="w-px h-5 bg-slate-200 mx-1" />
                         <a href={t.linkedinUrl} target="_blank" rel="noopener noreferrer" title="Open LinkedIn">
                           <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 hover:text-[#0077b5] hover:bg-[#0077b5]/10">
