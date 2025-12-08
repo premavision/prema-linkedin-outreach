@@ -265,12 +265,28 @@ export default function DashboardPage() {
 
       <div className="space-y-6">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
-            <User className="h-6 w-6 text-slate-500" />
-            Target List
-            <span className="text-sm font-normal text-slate-500 ml-2 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
-              {targets.filter(t => t.status === 'APPROVED').length} / {targets.length} Approved
+          <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3 flex-wrap">
+            <span className="flex items-center gap-3">
+              <User className="h-6 w-6 text-slate-500" />
+              Target List
             </span>
+            <div className="flex flex-wrap gap-2 ml-2">
+              <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                {targets.length} Total
+              </span>
+              <span className="text-xs font-medium text-orange-700 bg-orange-50 px-2.5 py-0.5 rounded-full border border-orange-200">
+                {targets.filter(t => t.status === 'NOT_VISITED').length} Not Visited
+              </span>
+              <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+                {targets.filter(t => t.status === 'PROFILE_SCRAPED').length} Scraped
+              </span>
+              <span className="text-xs font-medium text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
+                {targets.filter(t => t.status === 'MESSAGE_DRAFTED').length} Drafts
+              </span>
+              <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-0.5 rounded-full border border-green-200">
+                {targets.filter(t => t.status === 'APPROVED').length} Ready
+              </span>
+            </div>
           </h2>
         </div>
 
