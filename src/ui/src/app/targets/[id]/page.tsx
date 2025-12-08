@@ -211,6 +211,34 @@ export default function TargetDetailsPage() {
     setEdits(prev => ({ ...prev, [id]: val }));
   };
 
+  const getStatusBadge = (rawStatus: string) => {
+    const status = rawStatus?.toUpperCase() ?? '';
+
+    const styles: Record<string, string> = {
+      NOT_VISITED: 'bg-orange-50 text-orange-700 border-orange-200',
+      PROFILE_SCRAPED: 'bg-blue-50 text-blue-700 border-blue-200',
+      MESSAGE_DRAFTED: 'bg-purple-50 text-purple-700 border-purple-200',
+      APPROVED: 'bg-green-50 text-green-700 border-green-200',
+      default: 'bg-gray-100 text-gray-700 border-gray-200',
+    };
+
+    const labels: Record<string, string> = {
+      NOT_VISITED: 'Not Visited',
+      PROFILE_SCRAPED: 'Profile Scraped',
+      MESSAGE_DRAFTED: 'Drafts Ready',
+      APPROVED: 'Approved',
+    };
+
+    const style = styles[status] ?? styles.default;
+    const label = labels[status] ?? rawStatus ?? 'Unknown';
+
+    return (
+      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${style}`}>
+        {label}
+      </span>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -248,7 +276,10 @@ export default function TargetDetailsPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{target.name}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-slate-900">{target.name}</h1>
+              {getStatusBadge(target.status)}
+            </div>
             <div className="flex items-center gap-2 text-slate-500 text-sm mt-1">
               <Building className="h-3.5 w-3.5" />
               <span>{target.company || 'Unknown Company'}</span>
