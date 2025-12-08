@@ -268,7 +268,9 @@ export default function DashboardPage() {
           <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3">
             <User className="h-6 w-6 text-slate-500" />
             Target List
-            <span className="text-sm font-normal text-slate-500 ml-2 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">{targets.length}</span>
+            <span className="text-sm font-normal text-slate-500 ml-2 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+              {targets.filter(t => t.status === 'APPROVED').length} / {targets.length} Approved
+            </span>
           </h2>
         </div>
 
