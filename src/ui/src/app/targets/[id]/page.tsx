@@ -52,6 +52,10 @@ export default function TargetDetailsPage() {
   const [offerContext, setOfferContext] = useState('We help teams build safe AI automations that keep humans in control.');
   const [error, setError] = useState<string | null>(null);
   const [edits, setEdits] = useState<Record<number, string>>({});
+  
+  // New error states
+  const [offerContextError, setOfferContextError] = useState<string | null>(null);
+  const [operationError, setOperationError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -87,21 +91,28 @@ export default function TargetDetailsPage() {
 
   const handleScrape = async () => {
     setActionLoading('scrape');
+    setOperationError(null);
     try {
       const res = await fetch(`${apiBase}/targets/${id}/scrape`, { method: 'POST' });
-      if (!res.ok) throw new Error('Scrape failed');
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Scrape failed');
+      }
       await fetchData();
     } catch (err) {
       console.error(err);
-      alert('Failed to scrape profile');
+      setOperationError((err as Error).message);
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleGenerate = async () => {
+    setOfferContextError(null);
+    setOperationError(null);
+
     if (!offerContext.trim()) {
-      alert('Please enter an offer context before generating drafts.');
+      setOfferContextError('Please enter an offer context before generating drafts.');
       return;
     }
     setActionLoading('generate');
@@ -111,7 +122,10 @@ export default function TargetDetailsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ offerContext, count: 2 })
       });
-      if (!res.ok) throw new Error('Generation failed');
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Generation failed');
+      }
       const newMessages = await res.json();
       setMessages(newMessages);
       // Refresh target to update status
@@ -122,7 +136,7 @@ export default function TargetDetailsPage() {
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to generate messages');
+      setOperationError((err as Error).message);
     } finally {
       setActionLoading(null);
     }
@@ -133,6 +147,7 @@ export default function TargetDetailsPage() {
     if (content === undefined) return; // No changes
 
     setActionLoading(`save-${messageId}`);
+    setOperationError(null);
     try {
       const res = await fetch(`${apiBase}/messages/${messageId}`, {
         method: 'PATCH',
@@ -150,7 +165,7 @@ export default function TargetDetailsPage() {
       });
     } catch (err) {
       console.error(err);
-      alert('Failed to save draft');
+      setOperationError('Failed to save draft');
     } finally {
       setActionLoading(null);
     }
@@ -158,6 +173,7 @@ export default function TargetDetailsPage() {
 
   const handleApprove = async (messageId: number) => {
     setActionLoading(`approve-${messageId}`);
+    setOperationError(null);
     try {
       const res = await fetch(`${apiBase}/messages/${messageId}`, {
         method: 'PATCH',
@@ -178,7 +194,7 @@ export default function TargetDetailsPage() {
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to approve message');
+      setOperationError('Failed to approve message');
     } finally {
       setActionLoading(null);
     }
@@ -186,6 +202,7 @@ export default function TargetDetailsPage() {
 
   const handleUnapprove = async (messageId: number) => {
     setActionLoading(`unapprove-${messageId}`);
+    setOperationError(null);
     try {
       const res = await fetch(`${apiBase}/messages/${messageId}`, {
         method: 'PATCH',
@@ -206,7 +223,7 @@ export default function TargetDetailsPage() {
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to unapprove message');
+      setOperationError('Failed to unapprove message');
     } finally {
       setActionLoading(null);
     }
@@ -215,6 +232,7 @@ export default function TargetDetailsPage() {
   const handleDiscard = async (messageId: number) => {
     // if (!confirm('Are you sure you want to discard this draft?')) return; // Optional confirmation
     setActionLoading(`discard-${messageId}`);
+    setOperationError(null);
     try {
       const res = await fetch(`${apiBase}/messages/${messageId}`, {
         method: 'PATCH',
@@ -226,7 +244,7 @@ export default function TargetDetailsPage() {
       setMessages(messages.map(m => m.id === messageId ? { ...m, status: 'DISCARDED' } : m));
     } catch (err) {
       console.error(err);
-      alert('Failed to discard message');
+      setOperationError('Failed to discard message');
     } finally {
       setActionLoading(null);
     }
@@ -235,6 +253,7 @@ export default function TargetDetailsPage() {
   const handleStartOver = async () => {
     if (!confirm('This will discard all current drafts. You will be able to update the context and generate new ones. Continue?')) return;
     setActionLoading('start-over');
+    setOperationError(null);
     try {
       const res = await fetch(`${apiBase}/targets/${id}/discard-all`, {
         method: 'POST',
@@ -255,7 +274,7 @@ export default function TargetDetailsPage() {
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to start over');
+      setOperationError('Failed to start over');
     } finally {
       setActionLoading(null);
     }
@@ -263,6 +282,13 @@ export default function TargetDetailsPage() {
 
   const handleTextChange = (id: number, val: string) => {
     setEdits(prev => ({ ...prev, [id]: val }));
+  };
+
+  const handleOfferContextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setOfferContext(e.target.value);
+    if (e.target.value.trim()) {
+      setOfferContextError(null);
+    }
   };
 
   const getStatusBadge = (rawStatus: string) => {
@@ -353,6 +379,13 @@ export default function TargetDetailsPage() {
           </Button>
         </a>
       </div>
+
+      {operationError && (
+        <div className="p-4 bg-red-50 border border-red-100 rounded-lg text-red-800 flex items-center gap-3">
+          <AlertCircle className="h-5 w-5 text-red-600 shrink-0" />
+          <p>{operationError}</p>
+        </div>
+      )}
 
       <div className="grid gap-8 lg:grid-cols-2">
         {/* Profile Section */}
@@ -517,10 +550,13 @@ export default function TargetDetailsPage() {
                     <label className="text-sm font-medium text-slate-700">Offer Context</label>
                     <Textarea
                       value={offerContext}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setOfferContext(e.target.value)}
+                      onChange={handleOfferContextChange}
                       rows={3}
-                      className="resize-none"
+                      className={`resize-none ${offerContextError ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : ''}`}
                     />
+                    {offerContextError && (
+                      <p className="text-sm text-red-600">{offerContextError}</p>
+                    )}
                   </div>
                   
                   {target.profile ? (

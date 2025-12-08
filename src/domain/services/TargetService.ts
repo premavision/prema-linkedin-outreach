@@ -5,8 +5,10 @@ import type { CreateTargetInput } from '../../infra/persistence/repository/Targe
 import { TargetRepository } from '../../infra/persistence/repository/TargetRepository.js';
 
 const targetCsvSchema = z.object({
-  name: z.string(),
-  linkedinUrl: z.string(),
+  name: z.string().min(1, "Name is required"),
+  linkedinUrl: z.string()
+    .url("Invalid URL format")
+    .refine((val) => val.includes('linkedin.com/'), { message: "Must be a valid LinkedIn URL (e.g. https://www.linkedin.com/in/...)" }),
   role: z.string().optional().nullable(),
   company: z.string().optional().nullable(),
 });
@@ -16,15 +18,56 @@ export class TargetService {
 
   async importCsv(buffer: Buffer) {
     const records = parse(buffer.toString('utf-8'), { columns: true, skip_empty_lines: true }) as Record<string, string>[];
-    const parsed: CreateTargetInput[] = records.map((record) => {
-      const validated = targetCsvSchema.parse({
-        name: record.name ?? record.Name,
-        linkedinUrl: record.linkedinUrl ?? record.LinkedIn ?? record.url,
-        role: record.role ?? record.Role,
-        company: record.company ?? record.Company,
-      });
-      return validated;
+    
+    const parsed: CreateTargetInput[] = [];
+    const errors: string[] = [];
+
+    records.forEach((record, index) => {
+      try {
+        const validated = targetCsvSchema.parse({
+            name: record.name ?? record.Name,
+            linkedinUrl: record.linkedinUrl ?? record.LinkedIn ?? record.url,
+            role: record.role ?? record.Role,
+            company: record.company ?? record.Company,
+        });
+        parsed.push(validated);
+      } catch (err) {
+        if (err instanceof z.ZodError) {
+            // Zod 3 uses .issues, .errors is a getter. Zod 4 might only have .issues.
+            // Safely access issues or errors
+            // @ts-ignore - handling potential version differences
+            const issues = err.issues || err.errors;
+            
+            if (issues && Array.isArray(issues)) {
+                // @ts-ignore
+                const rowErrors = issues.map(e => {
+                    const field = e.path ? e.path.join('.') : '';
+                    return field ? `${field}: ${e.message}` : e.message;
+                }).join(', ');
+                errors.push(`Row ${index + 2}: ${rowErrors}`);
+            } else {
+                errors.push(`Row ${index + 2}: Validation failed`);
+            }
+        } else {
+            const msg = (err as Error).message || 'Unknown error';
+            errors.push(`Row ${index + 2}: ${msg}`);
+        }
+      }
     });
+
+    if (errors.length > 0) {
+        // Return a structured error message that's easy to read
+        const summary = `Import failed. Found errors in ${errors.length} row(s):`;
+        // Limit to first 10 errors to avoid huge messages
+        const details = errors.slice(0, 10).join('\n');
+        const more = errors.length > 10 ? `\n...and ${errors.length - 10} more errors.` : '';
+        throw new Error(`${summary}\n${details}${more}`);
+    }
+
+    if (parsed.length === 0) {
+        throw new Error('No valid records found in CSV');
+    }
+
     await this.targetRepo.createMany(parsed);
     return this.targetRepo.list();
   }

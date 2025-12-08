@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { Upload, User, Building, FileText, Linkedin, Wand2, Loader2, Trash2 } from 'lucide-react';
+import { Upload, User, Building, FileText, Linkedin, Wand2, Loader2, Trash2, AlertCircle } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/Card';
 import { Input } from '../components/Input';
@@ -225,7 +225,12 @@ export default function DashboardPage() {
               <Button className="w-full h-11" type="submit" disabled={loading || !importFile} loading={loading}>
                 {loading ? 'Uploading...' : 'Upload CSV'}
               </Button>
-              {error && <p className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-100">{error}</p>}
+              {error && (
+                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-md border border-red-100 flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div className="whitespace-pre-wrap font-mono text-xs">{error}</div>
+                </div>
+              )}
               <p className="text-xs text-slate-400 pt-1">
                 Columns: name, linkedinUrl, role, company
               </p>
