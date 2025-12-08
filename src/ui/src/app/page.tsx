@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { Upload, User, Building, FileText, Linkedin, Wand2, Search, Loader2, Trash2 } from 'lucide-react';
+import { Upload, User, Building, FileText, Linkedin, Wand2, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/Card';
 import { Input } from '../components/Input';
@@ -326,30 +326,28 @@ export default function DashboardPage() {
                       <div className="flex justify-end items-center gap-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                         {t.status === 'NOT_VISITED' ? (
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            className="h-9 w-9 p-0 text-slate-500 hover:text-blue-600 hover:bg-blue-50"
+                            className="text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200"
                             onClick={() => triggerScrape(t.id)}
-                            disabled={loadingId === t.id}
-                            title="Scrape Profile"
+                            loading={loadingId === t.id}
                           >
-                            {loadingId === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                            Scrape
                           </Button>
                         ) : t.status !== 'APPROVED' ? (
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="sm"
-                            className="h-9 w-9 p-0 text-slate-500 hover:text-purple-600 hover:bg-purple-50"
+                            className="text-slate-500 hover:text-purple-600 hover:bg-purple-50 hover:border-purple-200"
                             onClick={() => triggerGenerate(t.id)}
-                            disabled={loadingId === t.id}
-                            title="Generate Messages"
+                            loading={loadingId === t.id}
                           >
-                            {loadingId === t.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                            Draft
                           </Button>
                         ) : null}
                         <div className="w-px h-5 bg-slate-200 mx-1" />
                         <a href={t.linkedinUrl} target="_blank" rel="noopener noreferrer" title="Open LinkedIn">
-                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-400 hover:text-[#0077b5] hover:bg-[#0077b5]/10">
+                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-[#0077b5] hover:bg-[#0077b5]/10">
                             <Linkedin className="h-4 w-4" />
                           </Button>
                         </a>
