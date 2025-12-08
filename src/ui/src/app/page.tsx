@@ -24,8 +24,10 @@ export default function DashboardPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [grandTotal, setGrandTotal] = useState(0);
   const [stats, setStats] = useState<Record<string, number>>({});
-  
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+
   const [offerContext, setOfferContext] = useState('We help teams build safe AI automations that keep humans in control.');
   const [importFile, setImportFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,7 +37,7 @@ export default function DashboardPage() {
 
   const LIMIT = 50;
 
-  const loadTargets = async (currentPage = 1) => {
+  const loadTargets = async (currentPage = 1, status: string | null = statusFilter) => {
     try {
       // Load config first
       const configRes = await fetch(`${apiBase}/config/offerContext`, { cache: 'no-store' });
@@ -44,7 +46,12 @@ export default function DashboardPage() {
         if (value) setOfferContext(value);
       }
 
-      const res = await fetch(`${apiBase}/targets?page=${currentPage}&limit=${LIMIT}`, { cache: 'no-store' });
+      let url = `${apiBase}/targets?page=${currentPage}&limit=${LIMIT}`;
+      if (status && status !== 'ALL') {
+        url += `&status=${status}`;
+      }
+
+      const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) {
         console.error('Failed to load targets:', res.status, res.statusText);
         setTargets([]);
@@ -55,6 +62,7 @@ export default function DashboardPage() {
         // Handle legacy response if backend hasn't updated
         setTargets(data);
         setTotalItems(data.length);
+        setGrandTotal(data.length);
         setTotalPages(1);
         setStats({});
       } else {
@@ -62,6 +70,13 @@ export default function DashboardPage() {
         setTotalItems(data.total || 0);
         setTotalPages(Math.ceil((data.total || 0) / LIMIT) || 1);
         setStats(data.stats || {});
+        // Calculate grand total from stats if filtering, or use total if no filter
+        if (status) {
+             const allCount = Object.values(data.stats || {}).reduce((a, b) => (a as number) + (b as number), 0);
+             setGrandTotal(allCount as number);
+        } else {
+             setGrandTotal(data.total || 0);
+        }
       }
     } catch (error) {
       console.error('Error loading targets:', error);
@@ -71,8 +86,14 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    loadTargets(page);
-  }, [page]);
+    loadTargets(page, statusFilter);
+  }, [page, statusFilter]);
+
+  const handleStatusFilter = (status: string | null) => {
+    setStatusFilter(status);
+    setPage(1);
+    // useEffect will trigger loadTargets
+  };
 
   const handleSaveConfig = async () => {
     try {
@@ -301,27 +322,62 @@ export default function DashboardPage() {
               Target List
             </span>
             <div className="flex flex-wrap gap-2 ml-2">
-              <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
-                {totalItems} Total
-              </span>
-              <span className="text-xs font-medium text-orange-700 bg-orange-50 px-2.5 py-0.5 rounded-full border border-orange-200">
+              <button 
+                onClick={() => handleStatusFilter(null)}
+                className={`text-xs font-medium px-2.5 py-0.5 rounded-full border transition-all ${
+                  !statusFilter ? 'bg-slate-800 text-white border-slate-900 shadow-sm' : 'text-slate-600 bg-slate-100 border-slate-200 hover:bg-slate-200 hover:border-slate-300'
+                }`}
+              >
+                {grandTotal} Total
+              </button>
+              <button 
+                onClick={() => handleStatusFilter('NOT_VISITED')}
+                className={`text-xs font-medium px-2.5 py-0.5 rounded-full border transition-all ${
+                  statusFilter === 'NOT_VISITED' ? 'bg-orange-600 text-white border-orange-700 shadow-sm' : 'text-orange-700 bg-orange-50 border-orange-200 hover:bg-orange-100'
+                }`}
+              >
                 {stats['NOT_VISITED'] || 0} Not Visited
-              </span>
-              <span className="text-xs font-medium text-red-700 bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200">
+              </button>
+              <button 
+                onClick={() => handleStatusFilter('BROKEN')}
+                className={`text-xs font-medium px-2.5 py-0.5 rounded-full border transition-all ${
+                  statusFilter === 'BROKEN' ? 'bg-red-600 text-white border-red-700 shadow-sm' : 'text-red-700 bg-red-50 border-red-200 hover:bg-red-100'
+                }`}
+              >
                 {stats['BROKEN'] || 0} Broken
-              </span>
-              <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
+              </button>
+              <button 
+                onClick={() => handleStatusFilter('PROFILE_SCRAPED')}
+                className={`text-xs font-medium px-2.5 py-0.5 rounded-full border transition-all ${
+                  statusFilter === 'PROFILE_SCRAPED' ? 'bg-blue-600 text-white border-blue-700 shadow-sm' : 'text-blue-700 bg-blue-50 border-blue-200 hover:bg-blue-100'
+                }`}
+              >
                 {stats['PROFILE_SCRAPED'] || 0} Scraped
-              </span>
-              <span className="text-xs font-medium text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
+              </button>
+              <button 
+                onClick={() => handleStatusFilter('MESSAGE_DRAFTED')}
+                className={`text-xs font-medium px-2.5 py-0.5 rounded-full border transition-all ${
+                  statusFilter === 'MESSAGE_DRAFTED' ? 'bg-purple-600 text-white border-purple-700 shadow-sm' : 'text-purple-700 bg-purple-50 border-purple-200 hover:bg-purple-100'
+                }`}
+              >
                 {stats['MESSAGE_DRAFTED'] || 0} Drafts
-              </span>
-              <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-0.5 rounded-full border border-green-200">
+              </button>
+              <button 
+                onClick={() => handleStatusFilter('APPROVED')}
+                className={`text-xs font-medium px-2.5 py-0.5 rounded-full border transition-all ${
+                  statusFilter === 'APPROVED' ? 'bg-green-600 text-white border-green-700 shadow-sm' : 'text-green-700 bg-green-50 border-green-200 hover:bg-green-100'
+                }`}
+              >
                 {stats['APPROVED'] || 0} Ready
-              </span>
-              <span className="text-xs font-medium text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+              </button>
+              <button 
+                onClick={() => handleStatusFilter('EXPORTED')}
+                className={`text-xs font-medium px-2.5 py-0.5 rounded-full border transition-all ${
+                  statusFilter === 'EXPORTED' ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm' : 'text-indigo-700 bg-indigo-50 border-indigo-200 hover:bg-indigo-100'
+                }`}
+              >
                 {stats['EXPORTED'] || 0} Exported
-              </span>
+              </button>
             </div>
           </h2>
         </div>

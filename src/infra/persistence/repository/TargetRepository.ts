@@ -52,14 +52,17 @@ export class TargetRepository {
     }
   }
 
-  async list(skip?: number, take?: number) {
+  async list(skip?: number, take?: number, status?: string) {
+    const where = status && status !== 'ALL' ? { status } : {};
+    
     const [items, total, statsData] = await Promise.all([
       prisma.target.findMany({ 
+        where,
         orderBy: { createdAt: 'desc' },
-        skip,
-        take,
+        ...(skip !== undefined ? { skip } : {}),
+        ...(take !== undefined ? { take } : {}),
       }),
-      prisma.target.count(),
+      prisma.target.count({ where }),
       prisma.target.groupBy({
         by: ['status'],
         _count: { status: true }

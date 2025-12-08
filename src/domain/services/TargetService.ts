@@ -73,9 +73,9 @@ export class TargetService {
     return this.listTargets(1, 50);
   }
 
-  listTargets(page: number = 1, limit: number = 50) {
+  listTargets(page: number = 1, limit: number = 50, status?: string) {
     const skip = (page - 1) * limit;
-    return this.targetRepo.list(skip, limit);
+    return this.targetRepo.list(skip, limit, status);
   }
 
   getTarget(id: number) {
