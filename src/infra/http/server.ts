@@ -143,7 +143,7 @@ app.delete('/messages/:id', async (req, res) => {
 });
 
 app.get('/export/approved', async (_req, res) => {
-  const messages = await messageService.exportApproved();
+  const messages = await messageService.exportNewApproved();
   const header = 'name,role,company,linkedinUrl,approvedMessage\n';
   const rows = messages
     .map((m) => {
@@ -157,6 +157,15 @@ app.get('/export/approved', async (_req, res) => {
     .join('\n');
   res.setHeader('Content-Type', 'text/csv');
   res.send(header + rows);
+});
+
+app.get('/export/stats', async (_req, res) => {
+  try {
+    const count = await messageService.getNewApprovedCount();
+    res.json({ count });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
 });
 
 app.get('/config/:key', async (req, res) => {

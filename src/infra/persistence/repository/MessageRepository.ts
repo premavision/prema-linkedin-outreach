@@ -27,4 +27,31 @@ export class MessageRepository {
   async listApproved() {
     return prisma.message.findMany({ where: { status: 'APPROVED' }, include: { target: true } });
   }
+
+  async listNewApproved() {
+    return prisma.message.findMany({
+      where: {
+        status: 'APPROVED',
+        target: {
+          status: {
+            not: 'EXPORTED'
+          }
+        }
+      },
+      include: { target: true }
+    });
+  }
+
+  async countNewApproved() {
+    return prisma.message.count({
+      where: {
+        status: 'APPROVED',
+        target: {
+          status: {
+            not: 'EXPORTED'
+          }
+        }
+      }
+    });
+  }
 }

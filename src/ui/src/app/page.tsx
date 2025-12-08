@@ -155,6 +155,7 @@ export default function DashboardPage() {
       PROFILE_SCRAPED: 'bg-blue-50 text-blue-700 border-blue-200',
       MESSAGE_DRAFTED: 'bg-purple-50 text-purple-700 border-purple-200',
       APPROVED: 'bg-green-50 text-green-700 border-green-200',
+      EXPORTED: 'bg-indigo-50 text-indigo-700 border-indigo-200',
       default: 'bg-gray-100 text-gray-700 border-gray-200',
     };
 
@@ -163,6 +164,7 @@ export default function DashboardPage() {
       PROFILE_SCRAPED: 'Profile Scraped',
       MESSAGE_DRAFTED: 'Drafts Ready',
       APPROVED: 'Ready to Export',
+      EXPORTED: 'Exported',
     };
 
     const style = styles[status] ?? styles.default;
@@ -290,6 +292,9 @@ export default function DashboardPage() {
               </span>
               <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-0.5 rounded-full border border-green-200">
                 {targets.filter(t => t.status === 'APPROVED').length} Ready
+              </span>
+              <span className="text-xs font-medium text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
+                {targets.filter(t => t.status === 'EXPORTED').length} Exported
               </span>
             </div>
           </h2>

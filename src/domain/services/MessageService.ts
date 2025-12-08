@@ -85,6 +85,22 @@ class MessageService {
   exportApproved() {
     return this.messageRepo.listApproved();
   }
+
+  async exportNewApproved() {
+    const messages = await this.messageRepo.listNewApproved();
+    
+    // Mark targets as EXPORTED
+    for (const message of messages) {
+      // Use cast to any or TargetStatus if needed, but string should work for Prisma
+      await this.targetRepo.updateStatus(message.targetId, 'EXPORTED' as any);
+    }
+    
+    return messages;
+  }
+
+  getNewApprovedCount() {
+    return this.messageRepo.countNewApproved();
+  }
 }
 
 export { MessageService };
