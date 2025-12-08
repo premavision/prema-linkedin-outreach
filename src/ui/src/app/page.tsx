@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { Upload, User, Building, FileText, Linkedin, Wand2, Search, Loader2 } from 'lucide-react';
+import { Upload, User, Building, FileText, Linkedin, Wand2, Search, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/Card';
 import { Input } from '../components/Input';
@@ -68,6 +68,26 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
       setImportFile(null);
+    }
+  };
+
+    const handleReset = async () => {
+    if (!confirm('Are you sure you want to delete all data? This cannot be undone.')) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${apiBase}/reset`, { method: 'POST' });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Reset failed' }));
+        setError(errorData.error || 'Reset failed');
+      } else {
+        await loadTargets();
+      }
+    } catch (error) {
+      console.error('Error resetting database:', error);
+      setError('Unable to connect to API server.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -146,7 +166,16 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-           <Link href="/export">
+                     <Button 
+            variant="outline" 
+            onClick={handleReset} 
+            disabled={loading}
+            className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Reset DB
+          </Button>
+          <Link href="/export">
             <Button variant="outline">
               Export Approved
             </Button>

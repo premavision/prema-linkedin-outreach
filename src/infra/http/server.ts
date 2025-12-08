@@ -117,6 +117,18 @@ app.get('/export/approved', async (_req, res) => {
   res.send(header + rows);
 });
 
+app.post('/reset', async (_req, res) => {
+  try {
+    // Delete in reverse order of dependencies
+    await prisma.message.deleteMany();
+    await prisma.profileSnapshot.deleteMany();
+    await prisma.target.deleteMany();
+    res.json({ message: 'Database reset successfully' });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 app.use((_req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
