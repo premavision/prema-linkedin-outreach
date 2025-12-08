@@ -61,12 +61,21 @@ export default function TargetDetailsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${apiBase}/targets/${id}`);
-      if (!res.ok) throw new Error('Failed to load target');
-      const data = await res.json();
+      const [targetRes, configRes] = await Promise.all([
+        fetch(`${apiBase}/targets/${id}`),
+        fetch(`${apiBase}/config/offerContext`, { cache: 'no-store' }),
+      ]);
+
+      if (!targetRes.ok) throw new Error('Failed to load target');
+      const data = await targetRes.json();
       setTarget(data);
       if (data.messages) {
         setMessages(data.messages);
+      }
+
+      if (configRes.ok) {
+        const { value } = await configRes.json();
+        if (value) setOfferContext(value);
       }
     } catch (err) {
       console.error(err);
