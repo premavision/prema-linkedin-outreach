@@ -273,7 +273,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="space-y-6">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-8">
           <h2 className="text-xl font-semibold text-slate-900 flex items-center gap-3 flex-wrap">
             <span className="flex items-center gap-3">
               <User className="h-6 w-6 text-slate-500" />
@@ -305,98 +305,94 @@ export default function DashboardPage() {
           </h2>
         </div>
 
-        <Card className="border-0 bg-transparent shadow-none">
-          <CardContent className="p-0">
-            <div className="rounded-2xl border border-slate-100 bg-white shadow-2xl ring-1 ring-slate-100 overflow-hidden">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50/70 text-slate-500 border-b border-slate-100">
-                <tr>
-                  <th className="px-6 py-5 font-medium w-[25%] text-xs uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-5 font-medium w-[25%] text-xs uppercase tracking-wider">Role & Company</th>
-                  <th className="px-6 py-5 font-medium w-[20%] text-xs uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-5 font-medium text-right w-[30%] text-xs uppercase tracking-wider">Actions</th>
-                </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                {targets.map((t) => (
-                  <tr key={t.id} className="group odd:bg-white even:bg-slate-50/40 hover:bg-slate-100/60 transition-colors">
-                    <td className="px-6 py-5">
-                      <Link href={`/targets/${t.id}`} className="font-semibold text-base text-slate-900 hover:text-blue-600 hover:underline decoration-blue-200 underline-offset-4 transition-all">
-                        {t.name}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="space-y-1.5">
-                        <div className="font-medium text-slate-700 text-sm">{t.role || '—'}</div>
-                        <div className="flex items-center gap-1.5 text-slate-500 text-xs">
-                          <Building className="h-3.5 w-3.5" />
-                          {t.company || '—'}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      {getStatusBadge(t.status)}
-                    </td>
-                    <td className="px-6 py-5 text-right">
-                      <div className="flex justify-end items-center gap-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                        {t.status === 'NOT_VISITED' || t.status === 'BROKEN' ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200"
-                            onClick={() => triggerScrape(t.id)}
-                            loading={loadingId === t.id}
-                            disabled={loadingId === t.id || t.status === 'BROKEN'}
-                          >
-                            Scrape
-                          </Button>
-                        ) : t.status !== 'APPROVED' ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-slate-500 hover:text-purple-600 hover:bg-purple-50 hover:border-purple-200"
-                            onClick={() => triggerGenerate(t.id)}
-                            loading={loadingId === t.id}
-                          >
-                            Draft
-                          </Button>
-                        ) : null}
-                        <div className="w-px h-5 bg-slate-200 mx-1" />
-                        {t.status === 'BROKEN' ? (
-                          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-300" disabled>
-                            <Linkedin className="h-4 w-4" />
-                          </Button>
-                        ) : (
-                          <a href={t.linkedinUrl} target="_blank" rel="noopener noreferrer" title="Open LinkedIn">
-                            <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-[#0077b5] hover:bg-[#0077b5]/10">
-                              <Linkedin className="h-4 w-4" />
-                            </Button>
-                          </a>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {targets.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="p-16 text-center bg-white">
-                      <div className="flex flex-col items-center gap-4 text-slate-500">
-                        <div className="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center">
-                          <User className="h-7 w-7 text-slate-400" />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="font-medium text-lg text-slate-900">No targets yet</p>
-                          <p className="text-slate-500">Upload a CSV file to get started.</p>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-slate-100 bg-white shadow-2xl ring-1 ring-slate-100 overflow-hidden">
+          <table className="w-full text-sm text-left">
+            <thead className="bg-slate-50/70 text-slate-500 border-b border-slate-100">
+            <tr>
+              <th className="px-8 lg:px-10 py-5 font-medium w-[25%] text-xs uppercase tracking-wider">Name</th>
+              <th className="px-8 lg:px-10 py-5 font-medium w-[25%] text-xs uppercase tracking-wider">Role & Company</th>
+              <th className="px-8 lg:px-10 py-5 font-medium w-[20%] text-xs uppercase tracking-wider">Status</th>
+              <th className="px-8 lg:px-10 py-5 font-medium text-right w-[30%] text-xs uppercase tracking-wider">Actions</th>
+            </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+            {targets.map((t) => (
+              <tr key={t.id} className="group odd:bg-white even:bg-slate-50/40 hover:bg-slate-100/60 transition-colors">
+                <td className="px-8 lg:px-10 py-5">
+                  <Link href={`/targets/${t.id}`} className="font-semibold text-base text-slate-900 hover:text-blue-600 hover:underline decoration-blue-200 underline-offset-4 transition-all">
+                    {t.name}
+                  </Link>
+                </td>
+                <td className="px-8 lg:px-10 py-5">
+                  <div className="space-y-1.5">
+                    <div className="font-medium text-slate-700 text-sm">{t.role || '—'}</div>
+                    <div className="flex items-center gap-1.5 text-slate-500 text-xs">
+                      <Building className="h-3.5 w-3.5" />
+                      {t.company || '—'}
+                    </div>
+                  </div>
+                </td>
+                <td className="px-8 lg:px-10 py-5">
+                  {getStatusBadge(t.status)}
+                </td>
+                <td className="px-8 lg:px-10 py-5 text-right">
+                  <div className="flex justify-end items-center gap-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    {t.status === 'NOT_VISITED' || t.status === 'BROKEN' ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200"
+                        onClick={() => triggerScrape(t.id)}
+                        loading={loadingId === t.id}
+                        disabled={loadingId === t.id || t.status === 'BROKEN'}
+                      >
+                        Scrape
+                      </Button>
+                    ) : t.status !== 'APPROVED' ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-slate-500 hover:text-purple-600 hover:bg-purple-50 hover:border-purple-200"
+                        onClick={() => triggerGenerate(t.id)}
+                        loading={loadingId === t.id}
+                      >
+                        Draft
+                      </Button>
+                    ) : null}
+                    <div className="w-px h-5 bg-slate-200 mx-1" />
+                    {t.status === 'BROKEN' ? (
+                      <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-slate-300" disabled>
+                        <Linkedin className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <a href={t.linkedinUrl} target="_blank" rel="noopener noreferrer" title="Open LinkedIn">
+                        <Button variant="ghost" size="sm" className="h-9 w-9 p-0 text-[#0077b5] hover:bg-[#0077b5]/10">
+                          <Linkedin className="h-4 w-4" />
+                        </Button>
+                      </a>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {targets.length === 0 && (
+              <tr>
+                <td colSpan={4} className="p-16 text-center bg-white">
+                  <div className="flex flex-col items-center gap-4 text-slate-500">
+                    <div className="h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center">
+                      <User className="h-7 w-7 text-slate-400" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-medium text-lg text-slate-900">No targets yet</p>
+                      <p className="text-slate-500">Upload a CSV file to get started.</p>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
