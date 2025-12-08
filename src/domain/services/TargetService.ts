@@ -70,11 +70,12 @@ export class TargetService {
     }
 
     await this.targetRepo.createMany(parsed);
-    return this.targetRepo.list();
+    return this.listTargets(1, 50);
   }
 
-  listTargets() {
-    return this.targetRepo.list();
+  listTargets(page: number = 1, limit: number = 50) {
+    const skip = (page - 1) * limit;
+    return this.targetRepo.list(skip, limit);
   }
 
   getTarget(id: number) {

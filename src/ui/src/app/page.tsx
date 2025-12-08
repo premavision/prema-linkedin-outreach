@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { Upload, User, Building, FileText, Linkedin, Wand2, Loader2, Trash2, AlertCircle } from 'lucide-react';
+import { Upload, User, Building, FileText, Linkedin, Wand2, Loader2, Trash2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/Card';
 import { Input } from '../components/Input';
@@ -21,6 +21,11 @@ type Target = {
 
 export default function DashboardPage() {
   const [targets, setTargets] = useState<Target[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [stats, setStats] = useState<Record<string, number>>({});
+  
   const [offerContext, setOfferContext] = useState('We help teams build safe AI automations that keep humans in control.');
   const [importFile, setImportFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,7 +33,9 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
-  const loadTargets = async () => {
+  const LIMIT = 50;
+
+  const loadTargets = async (currentPage = 1) => {
     try {
       // Load config first
       const configRes = await fetch(`${apiBase}/config/offerContext`, { cache: 'no-store' });
@@ -37,13 +44,25 @@ export default function DashboardPage() {
         if (value) setOfferContext(value);
       }
 
-      const res = await fetch(`${apiBase}/targets`, { cache: 'no-store' });
+      const res = await fetch(`${apiBase}/targets?page=${currentPage}&limit=${LIMIT}`, { cache: 'no-store' });
       if (!res.ok) {
         console.error('Failed to load targets:', res.status, res.statusText);
         setTargets([]);
         return;
       }
-      setTargets(await res.json());
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        // Handle legacy response if backend hasn't updated
+        setTargets(data);
+        setTotalItems(data.length);
+        setTotalPages(1);
+        setStats({});
+      } else {
+        setTargets(data.items || []);
+        setTotalItems(data.total || 0);
+        setTotalPages(Math.ceil((data.total || 0) / LIMIT) || 1);
+        setStats(data.stats || {});
+      }
     } catch (error) {
       console.error('Error loading targets:', error);
       setTargets([]);
@@ -52,10 +71,10 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    loadTargets();
-  }, []);
+    loadTargets(page);
+  }, [page]);
 
-    const handleSaveConfig = async () => {
+  const handleSaveConfig = async () => {
     try {
       setSaveStatus('Saving...');
       await fetch(`${apiBase}/config/offerContext`, {
@@ -84,7 +103,8 @@ export default function DashboardPage() {
         const errorData = await res.json().catch(() => ({ error: 'Import failed' }));
         setError(errorData.error || 'Import failed');
       } else {
-        await loadTargets();
+        setPage(1);
+        await loadTargets(1);
       }
     } catch (error) {
       console.error('Error importing targets:', error);
@@ -105,7 +125,8 @@ export default function DashboardPage() {
         const errorData = await res.json().catch(() => ({ error: 'Reset failed' }));
         setError(errorData.error || 'Reset failed');
       } else {
-        await loadTargets();
+        setPage(1);
+        await loadTargets(1);
       }
     } catch (error) {
       console.error('Error resetting database:', error);
@@ -120,7 +141,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch(`${apiBase}/targets/${id}/scrape`, { method: 'POST' });
       if (res.ok) {
-        await loadTargets();
+        await loadTargets(page);
       }
     } catch (error) {
       console.error('Error scraping profile:', error);
@@ -138,7 +159,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ offerContext }),
       });
       if (res.ok) {
-        await loadTargets();
+        await loadTargets(page);
       }
     } catch (error) {
       console.error('Error generating messages:', error);
@@ -281,25 +302,25 @@ export default function DashboardPage() {
             </span>
             <div className="flex flex-wrap gap-2 ml-2">
               <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
-                {targets.length} Total
+                {totalItems} Total
               </span>
               <span className="text-xs font-medium text-orange-700 bg-orange-50 px-2.5 py-0.5 rounded-full border border-orange-200">
-                {targets.filter(t => t.status === 'NOT_VISITED').length} Not Visited
+                {stats['NOT_VISITED'] || 0} Not Visited
               </span>
               <span className="text-xs font-medium text-red-700 bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200">
-                {targets.filter(t => t.status === 'BROKEN').length} Broken
+                {stats['BROKEN'] || 0} Broken
               </span>
               <span className="text-xs font-medium text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
-                {targets.filter(t => t.status === 'PROFILE_SCRAPED').length} Scraped
+                {stats['PROFILE_SCRAPED'] || 0} Scraped
               </span>
               <span className="text-xs font-medium text-purple-700 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
-                {targets.filter(t => t.status === 'MESSAGE_DRAFTED').length} Drafts
+                {stats['MESSAGE_DRAFTED'] || 0} Drafts
               </span>
               <span className="text-xs font-medium text-green-700 bg-green-50 px-2.5 py-0.5 rounded-full border border-green-200">
-                {targets.filter(t => t.status === 'APPROVED').length} Ready
+                {stats['APPROVED'] || 0} Ready
               </span>
               <span className="text-xs font-medium text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                {targets.filter(t => t.status === 'EXPORTED').length} Exported
+                {stats['EXPORTED'] || 0} Exported
               </span>
             </div>
           </h2>
@@ -389,6 +410,38 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
+          
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="border-t border-slate-100 bg-slate-50 px-6 py-4 flex items-center justify-between">
+              <div className="text-sm text-slate-500">
+                Showing <span className="font-medium">{Math.min((page - 1) * LIMIT + 1, totalItems)}</span> to <span className="font-medium">{Math.min(page * LIMIT, totalItems)}</span> of <span className="font-medium">{totalItems}</span> results
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="text-sm font-medium text-slate-700">
+                  Page {page} of {totalPages}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

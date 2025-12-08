@@ -54,9 +54,11 @@ app.post('/targets/import', upload.single('file'), async (req, res) => {
   }
 });
 
-app.get('/targets', async (_req, res) => {
-  const targets = await targetService.listTargets();
-  res.json(targets);
+app.get('/targets', async (req, res) => {
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 50;
+  const result = await targetService.listTargets(page, limit);
+  res.json(result);
 });
 
 app.get('/targets/:id', async (req, res) => {

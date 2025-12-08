@@ -52,8 +52,24 @@ export class TargetRepository {
     }
   }
 
-  async list() {
-    return prisma.target.findMany({ orderBy: { createdAt: 'desc' } });
+  async list(skip?: number, take?: number) {
+    const [items, total, statsData] = await Promise.all([
+      prisma.target.findMany({ 
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      prisma.target.count(),
+      prisma.target.groupBy({
+        by: ['status'],
+        _count: { status: true }
+      })
+    ]);
+    
+    const stats: Record<string, number> = {};
+    statsData.forEach(g => { stats[g.status] = g._count.status });
+    
+    return { items, total, stats };
   }
 
   async findById(id: number) {
