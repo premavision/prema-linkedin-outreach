@@ -34,6 +34,8 @@ export default function DashboardPage() {
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [testFiles, setTestFiles] = useState<string[]>([]);
+  const [selectedTestFile, setSelectedTestFile] = useState<string>('');
 
   const LIMIT = 50;
 
@@ -89,6 +91,15 @@ export default function DashboardPage() {
     loadTargets(page, statusFilter);
   }, [page, statusFilter]);
 
+  useEffect(() => {
+    fetch(`${apiBase}/test-files`)
+      .then(res => res.json())
+      .then(files => {
+         if (Array.isArray(files)) setTestFiles(files);
+      })
+      .catch(err => console.error('Error loading test files:', err));
+  }, []);
+
   const handleStatusFilter = (status: string | null) => {
     setStatusFilter(status);
     setPage(1);
@@ -133,6 +144,32 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
       setImportFile(null);
+    }
+  };
+
+  const handleLoadTestFile = async () => {
+    if (!selectedTestFile) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${apiBase}/targets/import-test-file`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename: selectedTestFile })
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Import failed' }));
+        setError(errorData.error || 'Import failed');
+      } else {
+        setPage(1);
+        await loadTargets(1);
+        setSelectedTestFile('');
+      }
+    } catch (error) {
+      console.error('Error importing test file:', error);
+      setError('Unable to connect to API server.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -281,6 +318,40 @@ export default function DashboardPage() {
                 Columns: name, linkedinUrl, role, company
               </p>
             </form>
+
+            {testFiles.length > 0 && (
+                <>
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-slate-200" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-white px-2 text-slate-500">Or load test data</span>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <select
+                            className="w-full rounded-md border border-slate-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
+                            value={selectedTestFile}
+                            onChange={(e) => setSelectedTestFile(e.target.value)}
+                        >
+                            <option value="">Select a test file...</option>
+                            {testFiles.map(file => (
+                                <option key={file} value={file}>{file}</option>
+                            ))}
+                        </select>
+                        <Button 
+                            className="w-full h-11" 
+                            variant="secondary"
+                            onClick={handleLoadTestFile} 
+                            disabled={loading || !selectedTestFile}
+                        >
+                            Load Selected File
+                        </Button>
+                    </div>
+                </>
+            )}
           </CardContent>
         </Card>
 

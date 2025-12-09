@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
 import { config } from '../../config/env.js';
 import { TargetRepository } from '../persistence/repository/TargetRepository.js';
 import { ProfileRepository } from '../persistence/repository/ProfileRepository.js';
@@ -48,6 +50,37 @@ app.post('/targets/import', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'file is required' });
   try {
     const result = await targetService.importCsv(req.file.buffer);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+app.get('/test-files', async (_req, res) => {
+  try {
+    const dataDir = path.join(process.cwd(), 'data');
+    const files = await fs.promises.readdir(dataDir);
+    const csvFiles = files.filter(f => f.endsWith('.csv'));
+    res.json(csvFiles);
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+app.post('/targets/import-test-file', async (req, res) => {
+  const { filename } = req.body;
+  if (!filename) return res.status(400).json({ error: 'filename is required' });
+  
+  if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) {
+      return res.status(400).json({ error: 'Invalid filename' });
+  }
+
+  const dataDir = path.join(process.cwd(), 'data');
+  const filePath = path.join(dataDir, filename);
+  
+  try {
+    const fileBuffer = await fs.promises.readFile(filePath);
+    const result = await targetService.importCsv(fileBuffer);
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
