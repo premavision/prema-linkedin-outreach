@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "rootDir": "src",
     "outDir": "dist",
     "module": "Node16",
     "target": "es2021",
@@ -30,6 +29,6 @@
   ],
   "exclude": [
     "node_modules",
-    "src/ui/.next"
+    "src/ui"
   ]
 }

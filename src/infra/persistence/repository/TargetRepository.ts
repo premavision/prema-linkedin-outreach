@@ -7,6 +7,7 @@ export interface CreateTargetInput {
   role?: string | null | undefined;
   company?: string | null | undefined;
   status?: TargetStatus;
+  sessionId?: string;
 }
 
 export class TargetRepository {
@@ -22,6 +23,7 @@ export class TargetRepository {
             role: target.role ?? null,
             company: target.company ?? null,
             status: target.status ?? 'NOT_VISITED',
+            sessionId: target.sessionId ?? 'default',
           }
         })
       )
@@ -52,8 +54,11 @@ export class TargetRepository {
     }
   }
 
-  async list(skip?: number, take?: number, status?: string) {
-    const where = status && status !== 'ALL' ? { status } : {};
+  async list(skip?: number, take?: number, status?: string, sessionId: string = 'default') {
+    const where: any = { sessionId };
+    if (status && status !== 'ALL') {
+        where.status = status;
+    }
     
     const [items, total, statsData] = await Promise.all([
       prisma.target.findMany({ 
@@ -65,6 +70,7 @@ export class TargetRepository {
       prisma.target.count({ where }),
       prisma.target.groupBy({
         by: ['status'],
+        where, // Apply session filter to stats too
         _count: { status: true }
       })
     ]);

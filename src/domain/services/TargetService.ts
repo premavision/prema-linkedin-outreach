@@ -16,7 +16,7 @@ const targetCsvSchema = z.object({
 export class TargetService {
   constructor(private targetRepo: TargetRepository) {}
 
-  async importCsv(buffer: Buffer) {
+  async importCsv(buffer: Buffer, sessionId: string = 'default') {
     const records = parse(buffer.toString('utf-8'), { columns: true, skip_empty_lines: true }) as Record<string, string>[];
     
     const parsed: CreateTargetInput[] = [];
@@ -33,7 +33,7 @@ export class TargetService {
       const result = targetCsvSchema.safeParse(rawData);
 
       if (result.success) {
-          parsed.push({ ...result.data, status: 'NOT_VISITED' });
+          parsed.push({ ...result.data, status: 'NOT_VISITED', sessionId });
       } else {
           // Check if we can save as BROKEN
           // We need at least name and linkedinUrl to satisfy DB constraints
@@ -43,7 +43,8 @@ export class TargetService {
                   linkedinUrl: rawData.linkedinUrl,
                   role: rawData.role || null,
                   company: rawData.company || null,
-                  status: 'BROKEN'
+                  status: 'BROKEN',
+                  sessionId
               });
           } else {
               const issues = result.error.issues;
@@ -70,12 +71,12 @@ export class TargetService {
     }
 
     await this.targetRepo.createMany(parsed);
-    return this.listTargets(1, 50);
+    return this.listTargets(1, 50, undefined, sessionId);
   }
 
-  listTargets(page: number = 1, limit: number = 50, status?: string) {
+  listTargets(page: number = 1, limit: number = 50, status?: string, sessionId: string = 'default') {
     const skip = (page - 1) * limit;
-    return this.targetRepo.list(skip, limit, status);
+    return this.targetRepo.list(skip, limit, status, sessionId);
   }
 
   getTarget(id: number) {

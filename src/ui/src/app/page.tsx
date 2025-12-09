@@ -34,13 +34,29 @@ export default function DashboardPage() {
   const [loadingId, setLoadingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [testFiles, setTestFiles] = useState<string[]>([]);
+  const [selectedTestFile, setSelectedTestFile] = useState<string>('');
 
   const LIMIT = 50;
+
+  const getHeaders = () => {
+    let sessionId = localStorage.getItem('session_id');
+    if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        localStorage.setItem('session_id', sessionId);
+    }
+    return {
+        'x-session-id': sessionId
+    };
+  };
 
   const loadTargets = async (currentPage = 1, status: string | null = statusFilter) => {
     try {
       // Load config first
-      const configRes = await fetch(`${apiBase}/config/offerContext`, { cache: 'no-store' });
+      const configRes = await fetch(`${apiBase}/config/offerContext`, { 
+          cache: 'no-store',
+          headers: getHeaders()
+      });
       if (configRes.ok) {
         const { value } = await configRes.json();
         if (value) setOfferContext(value);
@@ -51,7 +67,10 @@ export default function DashboardPage() {
         url += `&status=${status}`;
       }
 
-      const res = await fetch(url, { cache: 'no-store' });
+      const res = await fetch(url, { 
+          cache: 'no-store',
+          headers: getHeaders()
+      });
       if (!res.ok) {
         console.error('Failed to load targets:', res.status, res.statusText);
         setTargets([]);
@@ -89,6 +108,15 @@ export default function DashboardPage() {
     loadTargets(page, statusFilter);
   }, [page, statusFilter]);
 
+  useEffect(() => {
+    fetch(`${apiBase}/test-files`)
+      .then(res => res.json())
+      .then(files => {
+         if (Array.isArray(files)) setTestFiles(files);
+      })
+      .catch(err => console.error('Error loading test files:', err));
+  }, []);
+
   const handleStatusFilter = (status: string | null) => {
     setStatusFilter(status);
     setPage(1);
@@ -100,7 +128,10 @@ export default function DashboardPage() {
       setSaveStatus('Saving...');
       await fetch(`${apiBase}/config/offerContext`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            ...getHeaders()
+        },
         body: JSON.stringify({ value: offerContext }),
       });
       setSaveStatus('Saved!');
@@ -119,7 +150,11 @@ export default function DashboardPage() {
     try {
       const form = new FormData();
       form.append('file', importFile);
-      const res = await fetch(`${apiBase}/targets/import`, { method: 'POST', body: form });
+      const res = await fetch(`${apiBase}/targets/import`, { 
+          method: 'POST', 
+          body: form,
+          headers: getHeaders()
+      });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: 'Import failed' }));
         setError(errorData.error || 'Import failed');
@@ -136,12 +171,44 @@ export default function DashboardPage() {
     }
   };
 
+  const handleLoadTestFile = async () => {
+    if (!selectedTestFile) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${apiBase}/targets/import-test-file`, {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            ...getHeaders()
+        },
+        body: JSON.stringify({ filename: selectedTestFile })
+      });
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Import failed' }));
+        setError(errorData.error || 'Import failed');
+      } else {
+        setPage(1);
+        await loadTargets(1);
+        setSelectedTestFile('');
+      }
+    } catch (error) {
+      console.error('Error importing test file:', error);
+      setError('Unable to connect to API server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
     const handleReset = async () => {
     if (!confirm('Are you sure you want to delete all data? This cannot be undone.')) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${apiBase}/reset`, { method: 'POST' });
+      const res = await fetch(`${apiBase}/reset`, { 
+          method: 'POST',
+          headers: getHeaders()
+      });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: 'Reset failed' }));
         setError(errorData.error || 'Reset failed');
@@ -160,7 +227,10 @@ export default function DashboardPage() {
   const triggerScrape = async (id: number) => {
     setLoadingId(id);
     try {
-      const res = await fetch(`${apiBase}/targets/${id}/scrape`, { method: 'POST' });
+      const res = await fetch(`${apiBase}/targets/${id}/scrape`, { 
+          method: 'POST',
+          headers: getHeaders()
+      });
       if (res.ok) {
         await loadTargets(page);
       }
@@ -176,7 +246,10 @@ export default function DashboardPage() {
     try {
       const res = await fetch(`${apiBase}/targets/${id}/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            ...getHeaders()
+        },
         body: JSON.stringify({ offerContext }),
       });
       if (res.ok) {
@@ -281,6 +354,40 @@ export default function DashboardPage() {
                 Columns: name, linkedinUrl, role, company
               </p>
             </form>
+
+            {testFiles.length > 0 && (
+                <>
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-slate-200" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-white px-2 text-slate-500">Or load test data</span>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <select
+                            className="w-full rounded-md border border-slate-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm"
+                            value={selectedTestFile}
+                            onChange={(e) => setSelectedTestFile(e.target.value)}
+                        >
+                            <option value="">Select a test file...</option>
+                            {testFiles.map(file => (
+                                <option key={file} value={file}>{file}</option>
+                            ))}
+                        </select>
+                        <Button 
+                            className="w-full h-11" 
+                            variant="secondary"
+                            onClick={handleLoadTestFile} 
+                            disabled={loading || !selectedTestFile}
+                        >
+                            Load Selected File
+                        </Button>
+                    </div>
+                </>
+            )}
           </CardContent>
         </Card>
 
