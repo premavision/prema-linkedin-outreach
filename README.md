@@ -7,6 +7,8 @@ This project demonstrates a modern automation stack with a clear, scalable archi
 
 **Scraping → Domain Logic → LLM Drafting → Human Review → Export**
 
+> **Note:** This project runs exclusively in Demo Mode, using local static HTML snapshots instead of live LinkedIn data.
+
 ---
 
 ## 🧠 Purpose
