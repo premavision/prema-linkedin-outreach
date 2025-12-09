@@ -39,10 +39,24 @@ export default function DashboardPage() {
 
   const LIMIT = 50;
 
+  const getHeaders = () => {
+    let sessionId = localStorage.getItem('session_id');
+    if (!sessionId) {
+        sessionId = crypto.randomUUID();
+        localStorage.setItem('session_id', sessionId);
+    }
+    return {
+        'x-session-id': sessionId
+    };
+  };
+
   const loadTargets = async (currentPage = 1, status: string | null = statusFilter) => {
     try {
       // Load config first
-      const configRes = await fetch(`${apiBase}/config/offerContext`, { cache: 'no-store' });
+      const configRes = await fetch(`${apiBase}/config/offerContext`, { 
+          cache: 'no-store',
+          headers: getHeaders()
+      });
       if (configRes.ok) {
         const { value } = await configRes.json();
         if (value) setOfferContext(value);
@@ -53,7 +67,10 @@ export default function DashboardPage() {
         url += `&status=${status}`;
       }
 
-      const res = await fetch(url, { cache: 'no-store' });
+      const res = await fetch(url, { 
+          cache: 'no-store',
+          headers: getHeaders()
+      });
       if (!res.ok) {
         console.error('Failed to load targets:', res.status, res.statusText);
         setTargets([]);
@@ -111,7 +128,10 @@ export default function DashboardPage() {
       setSaveStatus('Saving...');
       await fetch(`${apiBase}/config/offerContext`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            ...getHeaders()
+        },
         body: JSON.stringify({ value: offerContext }),
       });
       setSaveStatus('Saved!');
@@ -130,7 +150,11 @@ export default function DashboardPage() {
     try {
       const form = new FormData();
       form.append('file', importFile);
-      const res = await fetch(`${apiBase}/targets/import`, { method: 'POST', body: form });
+      const res = await fetch(`${apiBase}/targets/import`, { 
+          method: 'POST', 
+          body: form,
+          headers: getHeaders()
+      });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: 'Import failed' }));
         setError(errorData.error || 'Import failed');
@@ -154,7 +178,10 @@ export default function DashboardPage() {
     try {
       const res = await fetch(`${apiBase}/targets/import-test-file`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            ...getHeaders()
+        },
         body: JSON.stringify({ filename: selectedTestFile })
       });
       if (!res.ok) {
@@ -178,7 +205,10 @@ export default function DashboardPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${apiBase}/reset`, { method: 'POST' });
+      const res = await fetch(`${apiBase}/reset`, { 
+          method: 'POST',
+          headers: getHeaders()
+      });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: 'Reset failed' }));
         setError(errorData.error || 'Reset failed');
@@ -197,7 +227,10 @@ export default function DashboardPage() {
   const triggerScrape = async (id: number) => {
     setLoadingId(id);
     try {
-      const res = await fetch(`${apiBase}/targets/${id}/scrape`, { method: 'POST' });
+      const res = await fetch(`${apiBase}/targets/${id}/scrape`, { 
+          method: 'POST',
+          headers: getHeaders()
+      });
       if (res.ok) {
         await loadTargets(page);
       }
@@ -213,7 +246,10 @@ export default function DashboardPage() {
     try {
       const res = await fetch(`${apiBase}/targets/${id}/generate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+            'Content-Type': 'application/json',
+            ...getHeaders()
+        },
         body: JSON.stringify({ offerContext }),
       });
       if (res.ok) {

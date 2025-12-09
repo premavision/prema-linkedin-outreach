@@ -48,8 +48,9 @@ app.get('/health', (_req, res) => {
 
 app.post('/targets/import', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'file is required' });
+  const sessionId = (req.headers['x-session-id'] as string) || 'default';
   try {
-    const result = await targetService.importCsv(req.file.buffer);
+    const result = await targetService.importCsv(req.file.buffer, sessionId);
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
@@ -70,6 +71,7 @@ app.get('/test-files', async (_req, res) => {
 app.post('/targets/import-test-file', async (req, res) => {
   const { filename } = req.body;
   if (!filename) return res.status(400).json({ error: 'filename is required' });
+  const sessionId = (req.headers['x-session-id'] as string) || 'default';
   
   if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) {
       return res.status(400).json({ error: 'Invalid filename' });
@@ -80,7 +82,7 @@ app.post('/targets/import-test-file', async (req, res) => {
   
   try {
     const fileBuffer = await fs.promises.readFile(filePath);
-    const result = await targetService.importCsv(fileBuffer);
+    const result = await targetService.importCsv(fileBuffer, sessionId);
     res.json(result);
   } catch (err) {
     res.status(400).json({ error: (err as Error).message });
@@ -91,7 +93,8 @@ app.get('/targets', async (req, res) => {
   const page = Number(req.query.page) || 1;
   const limit = Number(req.query.limit) || 50;
   const status = req.query.status as string | undefined;
-  const result = await targetService.listTargets(page, limit, status);
+  const sessionId = (req.headers['x-session-id'] as string) || 'default';
+  const result = await targetService.listTargets(page, limit, status, sessionId);
   res.json(result);
 });
 
@@ -206,7 +209,8 @@ app.get('/export/stats', async (_req, res) => {
 
 app.get('/config/:key', async (req, res) => {
   try {
-    const value = await configRepo.get(req.params.key);
+    const sessionId = (req.headers['x-session-id'] as string) || 'default';
+    const value = await configRepo.get(req.params.key, sessionId);
     res.json({ value });
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
@@ -215,20 +219,32 @@ app.get('/config/:key', async (req, res) => {
 
 app.post('/config/:key', async (req, res) => {
   try {
-    await configRepo.set(req.params.key, req.body.value);
+    const sessionId = (req.headers['x-session-id'] as string) || 'default';
+    await configRepo.set(req.params.key, req.body.value, sessionId);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
   }
 });
 
-app.post('/reset', async (_req, res) => {
+app.post('/reset', async (req, res) => {
   try {
-    // Delete in reverse order of dependencies
-    await prisma.message.deleteMany();
-    await prisma.profileSnapshot.deleteMany();
-    await prisma.target.deleteMany();
-    res.json({ message: 'Database reset successfully' });
+    const sessionId = (req.headers['x-session-id'] as string) || 'default';
+    // Delete in reverse order of dependencies, scoped to session
+    // Find targets for this session
+    const targets = await prisma.target.findMany({ where: { sessionId } as any, select: { id: true } });
+    const targetIds = targets.map(t => t.id);
+
+    if (targetIds.length > 0) {
+        await prisma.message.deleteMany({ where: { targetId: { in: targetIds } } });
+        await prisma.profileSnapshot.deleteMany({ where: { targetId: { in: targetIds } } });
+        await prisma.target.deleteMany({ where: { id: { in: targetIds } } });
+    }
+    
+    // Also reset config for this session? Maybe optional.
+    // await prisma.config.deleteMany({ where: { sessionId } });
+
+    res.json({ message: 'Session database reset successfully' });
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
   }

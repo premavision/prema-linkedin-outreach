@@ -12,8 +12,9 @@ datasource db {
 
 model Target {
   id             Int              @id @default(autoincrement())
+  sessionId      String           @default("default")
   name           String
-  linkedinUrl    String           @unique
+  linkedinUrl    String
   role           String?
   company        String?
   status         String           @default("NOT_VISITED")
@@ -21,6 +22,9 @@ model Target {
   updatedAt      DateTime         @updatedAt
   profile        ProfileSnapshot?
   messages       Message[]
+
+  @@unique([linkedinUrl, sessionId])
+  @@index([sessionId])
 }
 
 model ProfileSnapshot {
@@ -49,6 +53,9 @@ model Message {
 }
 
 model Config {
-  key   String @id
-  value String
+  key       String
+  sessionId String @default("default")
+  value     String
+
+  @@id([key, sessionId])
 }
