@@ -112,7 +112,7 @@ export default function ExportPage() {
           </div>
           
           <div className="text-xs text-slate-500 pt-4 border-t">
-            <p>Note: Only messages marked as "Approved" will be included in the export. Exported messages will be marked as "Exported" and won't be included in future exports.</p>
+            <p>Note: Only messages marked as &quot;Approved&quot; will be included in the export. Exported messages will be marked as &quot;Exported&quot; and won&apos;t be included in future exports.</p>
           </div>
         </CardContent>
       </Card>

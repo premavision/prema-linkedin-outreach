@@ -1,7 +1,7 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
-import { Upload, User, Building, FileText, Linkedin, Wand2, Loader2, Trash2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FormEvent, useEffect, useState, useCallback } from 'react';
+import { Upload, User, Building, FileText, Linkedin, Wand2, Trash2, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '../components/Button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/Card';
 import { Input } from '../components/Input';
@@ -50,7 +50,7 @@ export default function DashboardPage() {
     };
   };
 
-  const loadTargets = async (currentPage = 1, status: string | null = statusFilter) => {
+  const loadTargets = useCallback(async (currentPage = 1, status: string | null = statusFilter) => {
     try {
       // Load config first
       const configRes = await fetch(`${apiBase}/config/offerContext`, { 
@@ -102,11 +102,11 @@ export default function DashboardPage() {
       setTargets([]);
       setError('Unable to connect to API server. Make sure the backend is running on port 4000.');
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
     loadTargets(page, statusFilter);
-  }, [page, statusFilter]);
+  }, [page, statusFilter, loadTargets]);
 
   useEffect(() => {
     fetch(`${apiBase}/test-files`)

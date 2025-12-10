@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Save, Check, RotateCw, Loader2, AlertCircle, Search, Wand2, User, Building, MapPin, Trash2, Undo2 } from 'lucide-react';
 import { Button } from '../../../components/Button';
@@ -42,7 +42,6 @@ interface Target {
 
 export default function TargetDetailsPage() {
   const params = useParams();
-  const router = useRouter();
   const id = Number(params.id);
 
   const [target, setTarget] = useState<Target | null>(null);
@@ -57,12 +56,7 @@ export default function TargetDetailsPage() {
   const [offerContextError, setOfferContextError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!id) return;
-    fetchData();
-  }, [id]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [targetRes, configRes] = await Promise.all([
@@ -87,7 +81,12 @@ export default function TargetDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    fetchData();
+  }, [id, fetchData]);
 
   const handleScrape = async () => {
     setActionLoading('scrape');
