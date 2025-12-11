@@ -1,236 +1,220 @@
-# 🚀 LinkedIn Outreach Engine (Prema Vision)
+# Prema LinkedIn Outreach Engine
 
-An AI-assisted outreach engine that **scrapes profiles, generates personalized LinkedIn message drafts, and keeps humans fully in control**.  
-No auto-sending, no spam bots — just safe automation patterns built on solid engineering.
+A safe, AI-assisted outreach engine that scrapes profiles, generates personalized LinkedIn message drafts, and enforces human-in-the-loop review.
 
-This project demonstrates a modern automation stack with a clear, scalable architecture:
+> Built by **Prema Vision LLC**, an AI automation consultancy led by **Denys Korolkov**.
 
-**Scraping → Domain Logic → LLM Drafting → Human Review → Export**
+## ⭐ Live Demo
 
-> **Note:** This project runs exclusively in Demo Mode, using local static HTML snapshots instead of live LinkedIn data.
+- **Web UI:** [https://prema-linkedin-outreach.vercel.app](https://prema-linkedin-outreach.vercel.app)
+- **API docs:** [https://prema-linkedin-outreach.onrender.com/docs](https://prema-linkedin-outreach.onrender.com/docs)
 
----
+## ⭐ Video Walkthrough
 
-## 🧠 Purpose
+![Demo Walkthrough](https://share.cleanshot.com/r425Lvnc+)
+(Full workflow walkthrough: scraping → personalization → human approval → export.)
 
-Most outreach tools offer two extremes:
+## ⭐ Screenshots
 
-- **Manual outreach** — slow, repetitive, inconsistent  
-- **Automated spam** — risky, impersonal, often harmful  
-
-This engine introduces the **middle path**:
-
-### ✔ Human-approved drafts  
-### ✔ Data-driven personalization  
-### ✔ Safe, compliant automation  
-### ✔ Maintainable backend architecture
-
-It collects profile data → generates high-quality drafts → allows human revision and approval.
+![Dashboard Preview](https://share.cleanshot.com/jSPLSmZ6+)
 
 ---
 
-## 🛠 Tech Stack
+## Elevator Pitch
 
-- **Node.js 20+**, **TypeScript**
-- **Express** API
-- **Playwright** scraper (plus a demo mode requiring zero browser installs)
-- **Prisma + SQLite**
-- **Next.js 14** (App Router) for the UI
-- **LLM abstraction layer** with OpenAI + local fallback
+Most outreach tools force a choice between slow manual work and risky spam bots. This engine provides the **middle path**: it automates data collection and initial drafting while enforcing human review for quality and safety. Designed for high-touch B2B sales and recruiting, it scales personalization without sacrificing reputation.
 
----
+## Why This Project Matters
 
-## 🧱 Project Structure
+Sales and recruiting teams waste countless hours copy-pasting profile data into ChatGPT or writing generic messages that get ignored. Fully automated bots often hallucinate or send inappropriate messages, risking account bans.
 
+This project solves the **"Spam vs. Scale"** dilemma by:
+1.  **Automating research:** Scraping profile data invisibly.
+2.  **Scaling personalization:** Using LLMs to write relevant drafts based on bio, experience, and recent posts.
+3.  **Enforcing safety:** No message leaves the system without a human click.
+
+## Core Features
+
+-   **Intelligent Profile Scraping**: Playwright-based scraper that extracts bio, experience, and activity (with a Demo mode for offline testing).
+-   **AI Personalization Engine**: Generates unique connection requests and InMails using OpenAI or local LLMs.
+-   **Human-in-the-Loop Dashboard**: A clean, dedicated Next.js dashboard to review, edit, approve, or discard drafts before they are queued.
+-   **Safe Automation Patterns**: Configurable delays, user-like pacing, session reuse, and request fingerprinting to mimic natural browsing behavior.
+-   **CSV Pipeline**: Simple import of targets and export of approved messages for final delivery.
+
+> **Note:** All scraping is intended for demo/testing. Respect LinkedIn’s terms of service when using real data.
+
+## Architecture Overview
+
+Each domain (Targets, Scraping, Messaging) is isolated behind a dedicated service module, making it easy to extend or replace components without touching the rest of the system.
+
+```mermaid
+graph TD
+    subgraph Client
+        UI[Next.js Dashboard]
+    end
+
+    subgraph "API Server (Express)"
+        API[API Routes]
+        TS[Target Service]
+        SS[ScrapeService]
+        MS[MessageService]
+    end
+
+    subgraph Infrastructure
+        DB[(SQLite / Prisma)]
+        PW[Playwright Scraper]
+        subgraph Modes
+            Demo[Demo Mode]
+            Live[Live Mode]
+        end
+        LLM[LLM Client]
+        subgraph Providers
+            OpenAI[OpenAI]
+            Local[Local LLM]
+        end
+    end
+
+    subgraph External
+        LI[LinkedIn]
+        OAI[OpenAI API]
+    end
+
+    UI <-->|JSON/REST| API
+    API --> TS & SS & MS
+    TS <--> DB
+    SS --> PW
+    SS <--> DB
+    MS --> LLM
+    MS <--> DB
+    PW --> Demo & Live
+    Live -.->|Scrapes| LI
+    LLM --> OpenAI & Local
+    OpenAI -.->|Generates| OAI
+```
+
+## Data Flow / AI Flow
+
+```mermaid
+graph TD
+    A[User Uploads CSV] -->|Parse & Validate| B[(Database)]
+    B --> C{Status Check}
+    C -->|Not Visited| D[Scraper Service]
+    D -->|Playwright/Demo| E[Profile Snapshot]
+    E --> F[LLM Service]
+    F -->|OpenAI / Local| G[Draft Message]
+    G --> H[Human Review UI]
+    H -->|Edit / Approve| I[(Approved Messages)]
+    H -->|Discard| J[Trash]
+    I --> K[Export to CSV]
+```
+
+## Tech Stack
+
+### Backend & Core
+-   **Runtime**: Node.js 20+ (ES Modules)
+-   **Framework**: Express.js
+-   **Database**: SQLite (via Prisma ORM) — easily swappable for PostgreSQL
+-   **Language**: TypeScript (Strict mode)
+
+### Automation & AI
+-   **Scraping**: Playwright (Headless browser automation)
+-   **LLM Integration**: OpenAI API (GPT-4o/GPT-3.5) with abstract provider pattern for local LLM fallbacks.
+-   **Queueing**: In-memory job processing (extensible to BullMQ).
+
+### Frontend
+-   **Framework**: Next.js 14 (App Router)
+-   **Styling**: Tailwind CSS
+-   **State**: React Server Components + Client Hooks
+
+## Setup & Running
+
+### 1. Clone and Install
 ```bash
-src/
-  config/             # environment handling
-  domain/             # models, business rules
-  infra/
-    automation/       # scraper interface, demo scraper, Playwright scraper
-    llm/              # prompts, OpenAI client, local fallback
-    persistence/      # Prisma repositories + schema
-    http/             # Express server & routes
-  ui/                 # Next.js UI (dashboard, target detail page, export flow)
-```
-
----
-
-## 🧬 Architectural Overview
-
-```
-            ┌────────────────────────┐
-            │      Next.js UI        │
-            │ Review • Edit • Export │
-            └───────────▲────────────┘
-                        │ REST API
-                       4000
-                        │
-            ┌───────────┴───────────┐
-            │      Express API       │
-            └──────────▲────────────┘
-                        │
-                Domain Logic Layer
-                        │
-     ┌───────────┬───────────────┬──────────────┬───────────────┐
-     │ Scraper   │ LLM Engine     │ Persistence  │ Validation     │
-     │ Playwright│ OpenAI/local   │ Prisma       │ Domain rules   │
-```
-
-The architecture is modular, testable, and easy to extend with new automation modules, LLMs, or workflows.
-
----
-
-## ⚙️ Setup
-
-### Install dependencies
-```bash
+git clone https://github.com/your-repo/prema-linkedin-outreach.git
+cd prema-linkedin-outreach
 npm install
 ```
 
-### Configure environment variables
+### 2. Environment Configuration
+Copy the example environment file and configure your API keys.
 ```bash
 cp .env.example .env
 ```
+*Set `SCRAPER_MODE=demo` to run without LinkedIn credentials.*
 
-### Apply database schema
+### 3. Database Migration
+Initialize the local SQLite database.
 ```bash
 npm run prisma:migrate
 ```
 
----
-
-## 🧪 Running Locally
-
-### Backend + UI together
+### 4. Run the Application
+Start both the Backend API and the Frontend UI.
 ```bash
 npm run dev
 ```
-- Express API on `http://localhost:4000`
-- Next.js UI on `http://localhost:3000`
-- **Note:** The dev script automatically generates Prisma client. Make sure you've run `npm run prisma:migrate` first.
+-   **UI**: http://localhost:3000
+-   **API**: http://localhost:4000
 
-### Backend only
+## How to Use (Step-by-Step Demo Flow)
+
+1.  **Import Targets**: Go to the dashboard and upload a CSV file containing LinkedIn URLs (see `data/demo_batch_1.csv`).
+2.  **Preview Target**: Click on a target to view details before scraping.
+3.  **Scrape Profiles**: Click "Scrape" on a target. In `demo` mode, this loads a pre-saved snapshot instanty. In `playwright` mode, it launches a browser to visit the profile.
+4.  **Generate Drafts**: The system automatically triggers the LLM to write a connection request based on the scraped bio and the offer context you provide.
+5.  **Review & Refine**:
+    -   **Approve**: If the message looks good.
+    -   **Edit**: Tweak the text manually.
+    -   **Regenerate**: Ask the AI to try again.
+6.  **Export**: Once you have a batch of approved messages, click "Export CSV" to get a file ready for your sending tool (or manual processing).
+
+## API Examples
+
+The system exposes a RESTful API for integration.
+
+### Import Targets
 ```bash
-npm run dev:server
+curl -X POST http://localhost:4000/targets/import \
+  -F "file=@./data/targets.csv"
 ```
 
-### UI only
+### Generate Message
+```json
+POST /targets/1/generate
+{
+  "offerContext": "We help SaaS founders scale engineering teams...",
+  "count": 2
+}
+```
+
+### Export Approved
 ```bash
-npm --workspace ui run dev
+GET http://localhost:4000/export/approved
 ```
 
-- API: `http://localhost:4000`  
-- UI: `http://localhost:3000`
+## Who This Is For
 
-### Troubleshooting
+-   **Founders & CTOs** building internal growth tools.
+-   **AI Automation Agencies** looking for a solid starting point for client projects.
+-   **Sales Operations Leaders** who need more control than standard outreach tools provide.
 
-**"Unable to connect to API server" error:**
-1. Make sure the API server is running on port 4000:
-   ```bash
-   npm run dev:server
-   ```
-2. Check if port 4000 is already in use:
-   ```bash
-   lsof -i :4000
-   ```
-3. Ensure the database is set up:
-   ```bash
-   npm run prisma:generate
-   npm run prisma:migrate
-   ```
-4. Verify the API server started successfully - you should see: `API server running on port 4000`
+## Extensibility & Future Enhancements
 
----
+The architecture is built to be extended:
 
-## 🔧 Environment Variables
+-   **Multi-LLM Support**: Easily swap OpenAI for Anthropic Claude or a local Llama 3 model via the `LLMClient` interface.
+-   **CRM Integration**: Add a `CRMService` adapter to sync approved leads directly to HubSpot or Salesforce.
+-   **Advanced Scraping**: The `Scraper` interface supports adding new strategies (e.g., API-based vendors like Proxycurl) without changing core logic.
+-   **Vector Embeddings**: Optional integration-ready architecture for RAG-enhanced personalization.
 
-| Variable | Description |
-|---------|-------------|
-| `DATABASE_URL` | SQLite connection string |
-| `PORT` | Express port (default: 4000) |
-| `SCRAPER_MODE` | `demo` or `playwright` |
-| `OPENAI_API_KEY` | optional |
-| `OPENAI_MODEL` | optional |
-| `NEXT_PUBLIC_API_BASE_URL` | UI → API endpoint |
+## Contact
 
----
+For collaboration, consulting, or questions:
 
-## ⭐ Features
+**Denys Korolkov** — Prema Vision LLC
 
-- CSV import of targets
-- Status-based pipeline:
+If you'd like a customized outreach engine or AI automation for your workflow, feel free to reach out.
 
-```
-NOT_VISITED → PROFILE_SCRAPED → MESSAGE_DRAFTED → APPROVED
-```
+📧 [denys@premavision.net](mailto:denys@premavision.net)
 
-- Playwright scraping with configurable mode
-- LLM-powered message generation (OpenAI or local inference)
-- Human-in-the-loop review & editing
-- Export approved drafts as CSV
-- Works fully offline in demo mode
-
----
-
-## 🔐 Ethics & Safety
-
-- No auto-sending — ever  
-- Conforms to safe automation practices  
-- Scraper throttling & configurable delays  
-- Local database, no hidden analytics  
-- Secrets only via environment variables  
-- Demo mode available for safe demos and testing  
-
----
-
-## 🛣 Roadmap
-
-### Coming soon
-- RAG-enhanced personalization
-- Multi-variant message generation
-- Relevance & personalization scoring
-- CRM sync (Notion / HubSpot)
-- Support for multiple AI providers (Anthropic, Gemini, Llama)
-- Serverless deployment template
-
-### Already implemented
-- Scraping engine  
-- LLM abstraction layer  
-- Full UI flow (review/edit/export)  
-- CSV import/export  
-- Demo mode  
-
----
-
-## 📦 Use Cases
-
-- B2B lead generation  
-- Technical recruiting  
-- Founder outreach  
-- Partnership development  
-- Post-event follow-ups  
-- Automation-assisted sales ops  
-
----
-
-## 🧑‍💻 Want to build on top of it?
-
-The engine is intentionally clean and extendable.  
-If you'd like, I can generate:
-
-- a **product landing page**
-- a **pitch deck**
-- a **demo script**
-- a **deployment guide**
-- an **architecture PDF**
-
-Just say the word.
-
----
-
-## 🧪 End-to-end Tests
-
-- `tests/e2e/dashboard.spec.ts` drives Playwright against the combo dev stack (`npm run dev`), covering the CSV import ➜ scrape ➜ generate ➜ approve ➜ export flow and the `/targets/[id]` demo generator.
-- Tests share their own SQLite file (`tmp/e2e.db`) and rely on `tests/e2e/fixtures/targets.csv` so the scenarios stay deterministic.
-- Run the suite with `npm run test:e2e`; Playwright will launch the Express and Next dev servers, seed a fresh database, and keep the browser headless.
+🌐 [https://premavision.net](https://premavision.net)
